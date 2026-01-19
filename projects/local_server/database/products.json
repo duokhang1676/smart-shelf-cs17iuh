@@ -1,0 +1,167 @@
+[
+    {
+        "product_id": "68790f04d07799278cee152f",
+        "product_name": "Coca cola lon 320ml",
+        "price": 10000,
+        "discount": 50,
+        "max_quantity": 1,
+        "weight": 426,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2443/87880/bhx/thung-24-lon-nuoc-ngot-coca-cola-320ml-202304131109287672.jpg",
+        "floor": 1,
+        "column": 1
+    },
+    {
+        "product_id": "68790f04d07799278cee152f",
+        "product_name": "Coca cola lon 320ml",
+        "price": 10000,
+        "discount": 50,
+        "max_quantity": 1,
+        "weight": 426,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2443/87880/bhx/thung-24-lon-nuoc-ngot-coca-cola-320ml-202304131109287672.jpg",
+        "floor": 1,
+        "column": 2
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 1,
+        "column": 3
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 1,
+        "column": 4
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 1,
+        "column": 5
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 2,
+        "column": 1
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 2,
+        "column": 2
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 2,
+        "column": 3
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 2,
+        "column": 4
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 2,
+        "column": 5
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 3,
+        "column": 1
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 3,
+        "column": 2
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 3,
+        "column": 3
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 3,
+        "column": 4
+    },
+    {
+        "product_id": "68790f04d07799278cee1530",
+        "product_name": "Nước suối Aquafina 500ml",
+        "price": 2000,
+        "discount": 0,
+        "max_quantity": 10,
+        "weight": 515,
+        "img_url": "https://cdn.tgdd.vn/Products/Images/2563/79245/bhx/thung-12-chai-nuoc-tinh-khiet-aquafina-15-lit-202407121116533520.jpg",
+        "floor": 3,
+        "column": 5
+    }
+]

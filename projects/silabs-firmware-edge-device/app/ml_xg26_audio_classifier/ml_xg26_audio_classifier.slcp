@@ -1,0 +1,52 @@
+# Silicon Labs Project Configuration Tools: slcp, v0, Component selection file.
+project_name: ml_xg26_audio_classifier
+label: ml_xg26_audio_classifier
+description: |
+  This example project shows an empty configuration that can be used as a starting point to add components and functionality.
+category: Example|Platform
+filter:
+- name: Device Type
+  value: [SoC]
+- name: MCU
+  value: [32-bit MCU]
+- name: Project Difficulty
+  value: [Beginner]
+package: platform
+quality: production
+readme:
+- {path: readme.md}
+- {path: readme.md}
+source:
+- {path: app.c}
+- {path: main.c}
+include:
+- path: .
+  file_list:
+  - {path: app.h}
+sdk: {id: simplicity_sdk, version: 2024.12.2}
+toolchain_settings: []
+component:
+- {from: aiml, id: ml_audio_feature_generation}
+- {from: aiml, id: tensorflow_debug_log_iostream}
+- {from: aiml, id: tensorflow_lite_micro}
+- {from: aiml, id: tensorflow_lite_micro_accelerated_kernels}
+- {id: EFR32MG26B510F3200IM68}
+- {id: brd2608a}
+- {id: clock_manager}
+- {id: device_init}
+- {id: iostream_retarget_stdio}
+- instance: [vcom]
+  id: iostream_usart
+- {id: mic_driver}
+- {id: mic_i2s_driver}
+- {id: micriumos_kernel}
+- {id: power_manager}
+- {id: sl_system}
+define:
+- {name: DEBUG_EFM}
+ui_hints:
+  highlight:
+  - {path: readme.md, focus: true}
+sdk_extension:
+- {id: aiml, version: 2.0.1}
+

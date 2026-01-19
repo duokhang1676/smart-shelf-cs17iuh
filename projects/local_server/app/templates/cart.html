@@ -1,0 +1,192 @@
+<!--
+* Copyright 2025 Tran Vu Thuy Trang [C]
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giỏ hàng</title>
+    
+    <!-- Critical Resource Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.socket.io" crossorigin>
+    
+    <!-- Critical CSS - Load synchronously -->
+    <link rel="stylesheet" href="/static/css/navigation.css">
+    <link rel="stylesheet" href="/static/css/cart.css">
+    
+    <!-- Font CSS - Load asynchronously -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap"></noscript>
+    
+    <!-- Module preload for critical JS -->
+    <link rel="modulepreload" href="/static/js/navigation.js">
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navigation-bar">
+    <div class="nav-brand">
+        <span class="nav-brand-text">CS17IUH</span>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link" title="Trang chủ">
+            <span class="nav-text">Trang chủ</span>
+        </a>
+        <a href="/shelf" class="nav-link" title="Kệ sản phẩm">
+            <span class="nav-text">Kệ hàng</span>
+        </a>
+        <a href="/combo" class="nav-link" title="Combo khuyến mãi">
+            <span class="nav-text">Combo</span>
+        </a>
+        <a href="/cart" class="nav-link active" title="Giỏ hàng">
+            <span class="nav-text">Giỏ hàng</span>
+        </a>
+        <a href="/guide" class="nav-link" title="Hướng dẫn sử dụng kệ">
+            <span class="nav-text">Hướng dẫn</span>
+        </a>
+        <div class="nav-dropdown">
+            <a href="#" class="nav-link" title="Cài đặt hệ thống" onclick="toggleSettingsDropdown(event)">
+                <img src="/static/img/setting.png" alt="Settings">
+            </a>
+            <div class="dropdown-menu" id="settingsDropdown">
+                <a href="/sensor-data" class="dropdown-item">
+                    <span>Dữ liệu môi trường</span>
+                </a>
+                <a href="/mobile-app" class="dropdown-item">
+                    <span>Nhân viên</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="content-wrapper">
+    <div class="container">
+    <!-- Connection status bar is now completely hidden - we use notifications instead -->
+    <div class="connection-status-bar" id="connectionStatusBar">
+        <div class="status-indicator" id="statusIndicator"></div>
+        <span id="connectionStatusText">Đang kết nối với loadcell...</span>
+    </div>
+    
+    <h1>GIỎ HÀNG</h1>
+    
+    <div class="cart-content">
+        <!-- Left Column: Product Cards -->
+        <div class="cart-products-section">
+            <div id="cart-products-list" class="cart-products-list" style="display: none;">
+                <!-- Product cards will be inserted here -->
+            </div>
+            
+            <div id="empty-msg" class="empty-cart">
+                <div class="empty-cart-icon">🛒</div>
+                <h3>Giỏ hàng của bạn đang trống</h3>
+                <p>Vui lòng lấy sản phẩm trên kệ</p>
+            </div>
+        </div>
+        
+        <!-- Right Column: Order Summary -->
+        <div class="order-summary">
+            <h2>Tóm tắt đơn hàng</h2>
+            
+            <div class="summary-row subtotal-row" id="subtotal-row">
+                <span class="summary-label">Tạm tính</span>
+                <span class="summary-value amount" id="subtotal-amount">0 ₫</span>
+            </div>
+            
+            <div class="summary-row discount-row" id="discount-row" style="display: none;">
+                <span class="summary-label">Giảm giá</span>
+                <span class="summary-value discount-amount amount">-0 ₫</span>
+            </div>
+            
+            <div class="summary-row promotion-row" id="promotion-row" style="display: none;">
+                <span class="summary-label">Tiết kiệm Combo</span>
+                <span class="summary-value promotion-amount">-0 ₫</span>
+            </div>
+            
+            <div class="summary-row total-row" id="total-row">
+                <span class="summary-label">Tổng cộng</span>
+                <span class="summary-value total-amount">0 ₫</span>
+            </div>
+            
+            <button class="checkout-btn" onclick="confirmPayment()">
+                Thanh toán
+            </button>
+            
+            <button class="update-cart-btn" onclick="refreshCart()">Cập nhật giỏ hàng</button>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Payment Confirmation Modal -->
+<div class="modal-overlay" id="payment-confirmation-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Xác nhận thanh toán</h3>
+        </div>
+        <div class="modal-body">
+            <p>Bạn có chắc chắn muốn thanh toán đơn hàng này không?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="document.getElementById('payment-confirmation-modal').style.display='none'">Hủy</button>
+            <button class="btn btn-primary" onclick="confirmPayment(); processPayment();">
+                Xác nhận
+            </button>
+            <!-- <button class="btn btn-primary" onclick="processPayment()">Xác nhận</button> -->
+        </div>
+    </div>
+</div>
+
+<!-- Product Position Error Modal -->
+<div class="modal-overlay" id="productPositionErrorModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Cảnh báo sản phẩm</h3>
+        </div>
+        <div class="modal-body">
+            <p id="productPositionErrorMessage">Sản phẩm đặt sai vị trí</p>
+            <div id="errorProductList" style="margin-top: 15px;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="closeProductPositionErrorModal()">Đã hiểu</button>
+        </div>
+    </div>
+</div>
+
+<!-- Print Invoice Confirmation Modal -->
+<div class="modal-overlay" id="printInvoiceModal" style="display: none;" onclick="closePrintInvoiceModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Xác nhận thanh toán</h3>
+            <button class="modal-close" onclick="closePrintInvoiceModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Bạn có muốn in hóa đơn không?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="proceedPayment(false)">Không</button>
+            <button class="btn btn-primary" onclick="proceedPayment(true)">Có</button>
+        </div>
+    </div>
+</div>
+
+<!-- Load scripts deferred for better performance -->
+<script src="/vendor/socket.io.min.js" defer></script>
+<script src="/static/js/navigation.js" defer></script>
+<script src="/static/js/cart.js" defer></script>
+</body>
+</html>

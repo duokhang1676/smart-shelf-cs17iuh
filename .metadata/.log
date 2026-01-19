@@ -1,0 +1,205 @@
+!SESSION 2025-08-19 01:31:23.913 -----------------------------------------------
+eclipse.buildId=unknown
+java.version=21.0.5
+java.vendor=Amazon.com Inc.
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_US
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -data D:\icc-25-cs17iuh
+
+!ENTRY com.silabs.ss.platform.rcp.core 2 0 2025-08-19 01:31:25.036
+!MESSAGE Logging bundle not found: com.silabs.ss.logger, logging not initialized.
+
+!ENTRY com.silabs.ss.platform.jetty.server 1 0 2025-08-19 01:31:25.922
+!MESSAGE Jetty listening on: http://127.0.0.1:49450/
+
+!ENTRY com.silabs.ss.platform.jetty.server 1 0 2025-08-19 01:31:26.448
+!MESSAGE ContentServer started at: 127.0.0.1, 49450
+
+!ENTRY com.silabs.ss.platform.rcp.core 1 0 2025-08-19 01:31:26.499
+!MESSAGE com.silabs.ss.tool.launcher.product found! Writing main studio shared file
+
+!ENTRY com.silabs.ss.platform.descriptor.core 2 0 2025-08-19 01:31:28.551
+!MESSAGE re-registering property: com.silabs.ss.platform.api.descriptor.core.model.impl.MPropertyImpl@d6a929b (id: universalConfig.compSelProjInstanceId, name: compSelProjInstanceId, label: null, description: specific id for this instance of a project) (propertyScope: ) (id: universalConfig.compSelProjInstanceId, type: String, defaultValueLiteral: null)
+
+!ENTRY com.silabs.ss.platform.content.core 4 0 2025-08-19 01:31:29.032
+!MESSAGE Asset Loading Errors:
+Asset com.silabs.ss.platform.internal.content.core.asset.model.impl.AssetImpl@64b56654 (version: null, changelog: null, path: /aem/www.silabs.com/documents/public/data-sheets/siwx917-ncp-datasheet.pdf, diskSizeKB: 0.0, downloadSizeKB: 0.0, directory: false, category: null, label: null, description: null, priority: 0, keywords: null) is missing required properties.  Ignoring...
+
+
+!ENTRY com.silabs.ss.platform.sdk.core 4 0 2025-08-19 01:31:36.217
+!MESSAGE Exception caught from detector com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector
+!STACK 0
+java.lang.NullPointerException: Cannot invoke "com.silabs.ss.platform.api.descriptor.core.IWriteableDescriptor.getPropertyMapper()" because "writeable" is null
+	at com.silabs.ss.platform.api.sdk.core.SDKUtils.loadGeneralProperties(SDKUtils.java:474)
+	at com.silabs.ss.platform.api.sdk.core.SDKUtils.loadGeneralProperties(SDKUtils.java:428)
+	at com.silabs.ss.platform.api.sdk.core.SDKUtils.loadGeneralProperties(SDKUtils.java:410)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.createProtocolFromSlce(UcSdkProtocolDetector.java:124)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.lambda$9(UcSdkProtocolDetector.java:106)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)
+	at java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)
+	at java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1939)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)
+	at java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)
+	at java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1939)
+	at java.base/java.util.stream.Streams$ConcatSpliterator.forEachRemaining(Streams.java:734)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEachOrdered(ReferencePipeline.java:601)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.detectExtensions(UcSdkProtocolDetector.java:108)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.lambda$1(UcSdkProtocolDetector.java:53)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.quickScan(UcSdkProtocolDetector.java:53)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseDetector.doDetectDescriptors(BaseDetector.java:71)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseDetector.detectDescriptors(BaseDetector.java:57)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.detectDescriptors(BaseRegistry.java:701)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.detectDescriptors(BaseRegistry.java:663)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.scanForNewDescriptors(BaseRegistry.java:640)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.autoDetectDescriptors(BaseRegistry.java:624)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.loadInternalDescriptors(BaseRegistry.java:573)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.lambda$13(BaseRegistry.java:550)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseDatabaseRegistry.invokeBatchOperation(BaseDatabaseRegistry.java:260)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.doEnsureSync(BaseRegistry.java:546)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.ensureSync(BaseRegistry.java:524)
+	at com.silabs.ss.platform.internal.descriptor.core.registry.plugins.RegistryDependencyPlugin.lambda$1(RegistryDependencyPlugin.java:227)
+	at org.eclipse.core.runtime.jobs.Job$1.run(Job.java:166)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:63)
+
+!ENTRY com.silabs.ss.tool.installer.core 1 0 2025-08-19 01:31:36.299
+!MESSAGE isInternalNetwork: false
+
+!ENTRY com.silabs.ss.platform.apack.core 1 0 2025-08-19 01:31:37.725
+!MESSAGE AdapterPack USB adapter pack has setupcheck function type 
+
+!ENTRY com.silabs.ss.platform.apack.core 1 0 2025-08-19 01:31:40.059
+!MESSAGE AdapterPack J-Link Driver installer adapter pack has postupdate function, executing
+
+!ENTRY com.silabs.ss.platform.content.core 4 0 2025-08-19 01:32:25.928
+!MESSAGE Asset Loading Errors:
+Asset com.silabs.ss.platform.internal.content.core.asset.model.impl.AssetImpl@412c600f (version: null, changelog: null, path: /aem/www.silabs.com/documents/public/data-sheets/siwx917-ncp-datasheet.pdf, diskSizeKB: 0.0, downloadSizeKB: 0.0, directory: false, category: null, label: null, description: null, priority: 0, keywords: null) is missing required properties.  Ignoring...
+
+
+!ENTRY com.silabs.ss.tool.installer.core 2 0 2025-08-19 01:32:45.817
+!MESSAGE Problem getting package resources: changelog
+
+!ENTRY com.silabs.ss.tool.installer.core 2 0 2025-08-19 01:32:45.836
+!MESSAGE Problem getting package resources: changelog
+!SESSION 2025-08-19 01:45:48.391 -----------------------------------------------
+eclipse.buildId=unknown
+java.version=21.0.5
+java.vendor=Amazon.com Inc.
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_US
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -data D:\icc-25-cs17iuh
+
+!ENTRY com.silabs.ss.platform.rcp.core 2 0 2025-08-19 01:45:49.624
+!MESSAGE Logging bundle not found: com.silabs.ss.logger, logging not initialized.
+
+!ENTRY com.silabs.ss.platform.jetty.server 1 0 2025-08-19 01:45:50.696
+!MESSAGE Jetty listening on: http://127.0.0.1:50479/
+
+!ENTRY com.silabs.ss.platform.jetty.server 1 0 2025-08-19 01:45:51.284
+!MESSAGE ContentServer started at: 127.0.0.1, 50479
+
+!ENTRY com.silabs.ss.platform.rcp.core 1 0 2025-08-19 01:45:51.339
+!MESSAGE com.silabs.ss.tool.launcher.product found! Writing main studio shared file
+
+!ENTRY com.silabs.ss.platform.descriptor.core 2 0 2025-08-19 01:45:53.273
+!MESSAGE re-registering property: com.silabs.ss.platform.api.descriptor.core.model.impl.MPropertyImpl@d6a929b (id: universalConfig.compSelProjInstanceId, name: compSelProjInstanceId, label: null, description: specific id for this instance of a project) (propertyScope: ) (id: universalConfig.compSelProjInstanceId, type: String, defaultValueLiteral: null)
+
+!ENTRY com.silabs.ss.platform.content.core 4 0 2025-08-19 01:45:53.726
+!MESSAGE Asset Loading Errors:
+Asset com.silabs.ss.platform.internal.content.core.asset.model.impl.AssetImpl@beb267b (version: null, changelog: null, path: /aem/www.silabs.com/documents/public/data-sheets/siwx917-ncp-datasheet.pdf, diskSizeKB: 0.0, downloadSizeKB: 0.0, directory: false, category: null, label: null, description: null, priority: 0, keywords: null) is missing required properties.  Ignoring...
+
+
+!ENTRY com.silabs.ss.platform.sdk.core 4 0 2025-08-19 01:46:00.086
+!MESSAGE Exception caught from detector com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector
+!STACK 0
+java.lang.NullPointerException: Cannot invoke "com.silabs.ss.platform.api.descriptor.core.IWriteableDescriptor.getPropertyMapper()" because "writeable" is null
+	at com.silabs.ss.platform.api.sdk.core.SDKUtils.loadGeneralProperties(SDKUtils.java:474)
+	at com.silabs.ss.platform.api.sdk.core.SDKUtils.loadGeneralProperties(SDKUtils.java:428)
+	at com.silabs.ss.platform.api.sdk.core.SDKUtils.loadGeneralProperties(SDKUtils.java:410)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.createProtocolFromSlce(UcSdkProtocolDetector.java:124)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.lambda$9(UcSdkProtocolDetector.java:106)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)
+	at java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)
+	at java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1939)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)
+	at java.base/java.util.Iterator.forEachRemaining(Iterator.java:133)
+	at java.base/java.util.Spliterators$IteratorSpliterator.forEachRemaining(Spliterators.java:1939)
+	at java.base/java.util.stream.Streams$ConcatSpliterator.forEachRemaining(Streams.java:734)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEachOrdered(ReferencePipeline.java:601)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.detectExtensions(UcSdkProtocolDetector.java:108)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.lambda$1(UcSdkProtocolDetector.java:53)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at com.silabs.ss.framework.uc.internal.api.sdk.UcSdkProtocolDetector.quickScan(UcSdkProtocolDetector.java:53)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseDetector.doDetectDescriptors(BaseDetector.java:71)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseDetector.detectDescriptors(BaseDetector.java:57)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.detectDescriptors(BaseRegistry.java:701)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.detectDescriptors(BaseRegistry.java:663)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.scanForNewDescriptors(BaseRegistry.java:640)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.autoDetectDescriptors(BaseRegistry.java:624)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.loadInternalDescriptors(BaseRegistry.java:573)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.lambda$13(BaseRegistry.java:550)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseDatabaseRegistry.invokeBatchOperation(BaseDatabaseRegistry.java:260)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.doEnsureSync(BaseRegistry.java:546)
+	at com.silabs.ss.platform.api.descriptor.core.registry.BaseRegistry.ensureSync(BaseRegistry.java:524)
+	at com.silabs.ss.platform.internal.descriptor.core.registry.plugins.RegistryDependencyPlugin.lambda$1(RegistryDependencyPlugin.java:227)
+	at org.eclipse.core.runtime.jobs.Job$1.run(Job.java:166)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:63)
+
+!ENTRY com.silabs.ss.tool.installer.core 1 0 2025-08-19 01:46:00.170
+!MESSAGE isInternalNetwork: false
+
+!ENTRY com.silabs.ss.platform.apack.core 1 0 2025-08-19 01:46:01.649
+!MESSAGE AdapterPack USB adapter pack has setupcheck function type 
+
+!ENTRY com.silabs.ss.platform.content.core 4 0 2025-08-19 01:46:50.737
+!MESSAGE Asset Loading Errors:
+Asset com.silabs.ss.platform.internal.content.core.asset.model.impl.AssetImpl@2f40cf29 (version: null, changelog: null, path: /aem/www.silabs.com/documents/public/data-sheets/siwx917-ncp-datasheet.pdf, diskSizeKB: 0.0, downloadSizeKB: 0.0, directory: false, category: null, label: null, description: null, priority: 0, keywords: null) is missing required properties.  Ignoring...
+
+
+!ENTRY com.silabs.ss.tool.installer.core 2 0 2025-08-19 01:47:19.385
+!MESSAGE Problem getting package resources: changelog
+
+!ENTRY com.silabs.ss.tool.installer.core 2 0 2025-08-19 01:47:19.397
+!MESSAGE Problem getting package resources: changelog

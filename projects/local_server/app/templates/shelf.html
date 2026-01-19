@@ -1,0 +1,231 @@
+<!--
+* Copyright 2025 Tran Vu Thuy Trang [C]
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kệ hàng</title>
+    
+    <!-- Critical Resource Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.socket.io" crossorigin>
+    
+    <!-- Critical CSS - Load synchronously -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shelf.css') }}">
+    
+    <!-- Font CSS - Load asynchronously with high priority -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap"></noscript>
+    
+    <!-- Critical JS - Load early but non-blocking -->
+    <link rel="modulepreload" href="{{ url_for('static', filename='js/navigation.js') }}">
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navigation-bar">
+    <div class="nav-brand">
+        <span class="nav-brand-text">CS17IUH</span>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link" title="Trang chủ">
+            <span class="nav-text">Trang chủ</span>
+        </a>
+        <a href="/shelf" class="nav-link active" title="Kệ sản phẩm">
+            <span class="nav-text">Kệ hàng</span>
+        </a>
+        <a href="/combo" class="nav-link" title="Combo khuyến mãi">
+            <span class="nav-text">Combo</span>
+        </a>
+        <a href="/cart" class="nav-link" title="Giỏ hàng">
+            <span class="nav-text">Giỏ hàng</span>
+        </a>
+        <a href="/guide" class="nav-link" title="Hướng dẫn sử dụng kệ">
+            <span class="nav-text">Hướng dẫn</span>
+        </a>
+        <div class="nav-dropdown">
+            <a href="#" class="nav-link" title="Cài đặt hệ thống" onclick="toggleSettingsDropdown(event)">
+                <img src="/static/img/setting.png" alt="Settings">
+            </a>
+            <div class="dropdown-menu" id="settingsDropdown">
+                <a href="/sensor-data" class="dropdown-item">
+                    <span>Dữ liệu môi trường</span>
+                </a>
+                <a href="/mobile-app" class="dropdown-item">
+                    <span>Nhân viên</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="content-wrapper">
+    <div class="container">
+        <h1>KỆ HÀNG</h1>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="products-count">{{ products|length }}</div>
+                <div class="stat-label">Loại sản phẩm</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="loadcell-total">Đang tải...</div>
+                <div class="stat-label">Sản phẩm trên kệ</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ products|sum(attribute='max_quantity') }}</div>
+                <div class="stat-label">Sản phẩm tối đa</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="error-count">0</div>
+                <div class="stat-label">Ngăn kệ lỗi</div>
+            </div>
+        </div>
+
+        <div class="shelf-container">
+            <!-- Tier 1 -->
+            <div class="shelf-tier" data-tier="TẦNG 1">
+                <div class="shelf-row">
+                    {% for i in range(5) %}
+                        {% set product = products[i] if i < products|length else None %}
+                        <div class="product-slot" data-slot="1.{{ i+1 }}" 
+                             {% if product and product.discount > 0 %}data-discount="-{{ product.discount }}%"{% endif %}>
+                            {% if product %}
+                                <div class="max-quantity-info{% if product.max_quantity < 50 %} max-quantity-low{% endif %}{% if product.max_quantity == 0 %} max-quantity-out{% endif %}" id="max-quantity-info-{{ i }}">
+                                    {{ product.max_quantity }}
+                                </div>
+                                <img src="{{ product.img_url }}" alt="{{ product.product_name }}" class="product-image" 
+                                     onerror="this.src='/static/img/no-image.jpg'" loading="eager" decoding="sync">
+                                <div class="product-name">{{ product.product_name }}</div>
+                                {% if product.discount > 0 %}
+                                    <div class="product-price">
+                                        <span class="original-price">{{ "{:,.0f}".format(product.price) }}đ</span>
+                                        <span class="discounted-price">{{ "{:,.0f}".format(product.price * (100 - product.discount) / 100) }}đ</span>
+                                    </div>
+                                {% else %}
+                                    <div class="product-price">{{ "{:,.0f}".format(product.price) }}đ</div>
+                                {% endif %}
+                                <div class="product-id">{{ product.product_id }}</div>
+                            {% else %}
+                                <div class="empty-slot">
+                                    <span>Trống</span>
+                                </div>
+                                <div class="product-name">Ngăn trống</div>
+                                <div class="product-price">-</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Tier 2 -->
+            <div class="shelf-tier" data-tier="TẦNG 2">
+                <div class="shelf-row">
+                    {% for i in range(5, 10) %}
+                        {% set product = products[i] if i < products|length else None %}
+                        <div class="product-slot" data-slot="2.{{ i-4 }}" 
+                             {% if product and product.discount > 0 %}data-discount="-{{ product.discount }}%"{% endif %}>
+                            {% if product %}
+                                <div class="max-quantity-info{% if product.max_quantity < 50 %} max-quantity-low{% endif %}{% if product.max_quantity == 0 %} max-quantity-out{% endif %}" id="max-quantity-info-{{ i }}">
+                                    {{ product.max_quantity }}
+                                </div>
+                                <img src="{{ product.img_url }}" alt="{{ product.product_name }}" class="product-image" 
+                                     onerror="this.src='/static/img/no-image.jpg'" loading="eager" decoding="sync">
+                                <div class="product-name">{{ product.product_name }}</div>
+                                {% if product.discount > 0 %}
+                                    <div class="product-price">
+                                        <span class="original-price">{{ "{:,.0f}".format(product.price) }}đ</span>
+                                        <span class="discounted-price">{{ "{:,.0f}".format(product.price * (100 - product.discount) / 100) }}đ</span>
+                                    </div>
+                                {% else %}
+                                    <div class="product-price">{{ "{:,.0f}".format(product.price) }}đ</div>
+                                {% endif %}
+                                <div class="product-id">{{ product.product_id }}</div>
+                            {% else %}
+                                <div class="empty-slot">
+                                    <span>Trống</span>
+                                </div>
+                                <div class="product-name">Ngăn trống</div>
+                                <div class="product-price">-</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Tier 3 -->
+            <div class="shelf-tier" data-tier="TẦNG 3">
+                <div class="shelf-row">
+                    {% for i in range(10, 15) %}
+                        {% set product = products[i] if i < products|length else None %}
+                        <div class="product-slot" data-slot="3.{{ i-9 }}" 
+                             {% if product and product.discount > 0 %}data-discount="-{{ product.discount }}%"{% endif %}>
+                            {% if product %}
+                                <div class="max-quantity-info{% if product.max_quantity < 50 %} max-quantity-low{% endif %}{% if product.max_quantity == 0 %} max-quantity-out{% endif %}" id="max-quantity-info-{{ i }}">
+                                    {{ product.max_quantity }}
+                                </div>
+                                <img src="{{ product.img_url }}" alt="{{ product.product_name }}" class="product-image" 
+                                     onerror="this.src='/static/img/no-image.jpg'" loading="eager" decoding="sync">
+                                <div class="product-name">{{ product.product_name }}</div>
+                                {% if product.discount > 0 %}
+                                    <div class="product-price">
+                                        <span class="original-price">{{ "{:,.0f}".format(product.price) }}đ</span>
+                                        <span class="discounted-price">{{ "{:,.0f}".format(product.price * (100 - product.discount) / 100) }}đ</span>
+                                    </div>
+                                {% else %}
+                                    <div class="product-price">{{ "{:,.0f}".format(product.price) }}đ</div>
+                                {% endif %}
+                                <div class="product-id">{{ product.product_id }}</div>
+                            {% else %}
+                                <div class="empty-slot">
+                                    <span>Trống</span>
+                                </div>
+                                <div class="product-name">Ngăn trống</div>
+                                <div class="product-price">-</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RFID Indicators -->
+    <div class="rfid-indicator" id="rfidIndicator">
+        RFID được quét thành công!
+    </div>
+    
+    <div class="rfid-input-display" id="rfidInputDisplay">
+        RFID: <span id="rfidInputText"></span>
+    </div>
+
+    <!-- Complete Adding Button - Only shown during adding state -->
+    <div class="complete-adding-button-container" id="completeAddingContainer" style="display: none;">
+        <button class="complete-adding-button" id="completeAddingButton">
+            <span>Xong</span>
+        </button>
+    </div>
+
+    <!-- Socket.IO and JavaScript - Load deferred for better performance -->
+    <script src="/vendor/socket.io.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/navigation.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/shelf.js') }}" defer></script>
+    </div>
+</div>
+</body>
+</html>

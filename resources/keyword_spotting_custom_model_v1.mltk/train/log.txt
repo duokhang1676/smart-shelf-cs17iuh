@@ -1,0 +1,504 @@
+CUDA_VISIBLE_DEVICES=
+No GPUs found, using CPU for training
+Model: "TENet"
+__________________________________________________________________________________________________
+ Layer (type)                Output Shape                 Param #   Connected to                  
+==================================================================================================
+ input_1 (InputLayer)        [(None, 98, 1, 104)]         0         []                            
+                                                                                                  
+ conv2d (Conv2D)             (None, 98, 1, 64)            20032     ['input_1[0][0]']             
+                                                                                                  
+ batch_normalization (Batch  (None, 98, 1, 64)            256       ['conv2d[0][0]']              
+ Normalization)                                                                                   
+                                                                                                  
+ pointwise_expand_conv-0 (C  (None, 98, 1, 192)           12288     ['batch_normalization[0][0]'] 
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_1 (Bat  (None, 98, 1, 192)           768       ['pointwise_expand_conv-0[0][0
+ chNormalization)                                                   ]']                           
+                                                                                                  
+ re_lu (ReLU)                (None, 98, 1, 192)           0         ['batch_normalization_1[0][0]'
+                                                                    ]                             
+                                                                                                  
+ mtconv-0 (MultiScaleTempor  (None, 49, 1, 192)           1728      ['re_lu[0][0]']               
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_2 (Bat  (None, 49, 1, 192)           768       ['mtconv-0[0][0]']            
+ chNormalization)                                                                                 
+                                                                                                  
+ re_lu_1 (ReLU)              (None, 49, 1, 192)           0         ['batch_normalization_2[0][0]'
+                                                                    ]                             
+                                                                                                  
+ strided_residual-0 (Conv2D  (None, 49, 1, 64)            4096      ['batch_normalization[0][0]'] 
+ )                                                                                                
+                                                                                                  
+ pointwise_contract_conv-0   (None, 49, 1, 64)            12288     ['re_lu_1[0][0]']             
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_4 (Bat  (None, 49, 1, 64)            256       ['strided_residual-0[0][0]']  
+ chNormalization)                                                                                 
+                                                                                                  
+ batch_normalization_3 (Bat  (None, 49, 1, 64)            256       ['pointwise_contract_conv-0[0]
+ chNormalization)                                                   [0]']                         
+                                                                                                  
+ re_lu_2 (ReLU)              (None, 49, 1, 64)            0         ['batch_normalization_4[0][0]'
+                                                                    ]                             
+                                                                                                  
+ add (Add)                   (None, 49, 1, 64)            0         ['batch_normalization_3[0][0]'
+                                                                    , 're_lu_2[0][0]']            
+                                                                                                  
+ re_lu_3 (ReLU)              (None, 49, 1, 64)            0         ['add[0][0]']                 
+                                                                                                  
+ pointwise_expand_conv-1 (C  (None, 49, 1, 192)           12288     ['re_lu_3[0][0]']             
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_5 (Bat  (None, 49, 1, 192)           768       ['pointwise_expand_conv-1[0][0
+ chNormalization)                                                   ]']                           
+                                                                                                  
+ re_lu_4 (ReLU)              (None, 49, 1, 192)           0         ['batch_normalization_5[0][0]'
+                                                                    ]                             
+                                                                                                  
+ mtconv-1 (MultiScaleTempor  (None, 49, 1, 192)           1728      ['re_lu_4[0][0]']             
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_6 (Bat  (None, 49, 1, 192)           768       ['mtconv-1[0][0]']            
+ chNormalization)                                                                                 
+                                                                                                  
+ re_lu_5 (ReLU)              (None, 49, 1, 192)           0         ['batch_normalization_6[0][0]'
+                                                                    ]                             
+                                                                                                  
+ pointwise_contract_conv-1   (None, 49, 1, 64)            12288     ['re_lu_5[0][0]']             
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_7 (Bat  (None, 49, 1, 64)            256       ['pointwise_contract_conv-1[0]
+ chNormalization)                                                   [0]']                         
+                                                                                                  
+ add_1 (Add)                 (None, 49, 1, 64)            0         ['batch_normalization_7[0][0]'
+                                                                    , 're_lu_3[0][0]']            
+                                                                                                  
+ re_lu_6 (ReLU)              (None, 49, 1, 64)            0         ['add_1[0][0]']               
+                                                                                                  
+ pointwise_expand_conv-2 (C  (None, 49, 1, 192)           12288     ['re_lu_6[0][0]']             
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_8 (Bat  (None, 49, 1, 192)           768       ['pointwise_expand_conv-2[0][0
+ chNormalization)                                                   ]']                           
+                                                                                                  
+ re_lu_7 (ReLU)              (None, 49, 1, 192)           0         ['batch_normalization_8[0][0]'
+                                                                    ]                             
+                                                                                                  
+ mtconv-2 (MultiScaleTempor  (None, 49, 1, 192)           1728      ['re_lu_7[0][0]']             
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_9 (Bat  (None, 49, 1, 192)           768       ['mtconv-2[0][0]']            
+ chNormalization)                                                                                 
+                                                                                                  
+ re_lu_8 (ReLU)              (None, 49, 1, 192)           0         ['batch_normalization_9[0][0]'
+                                                                    ]                             
+                                                                                                  
+ pointwise_contract_conv-2   (None, 49, 1, 64)            12288     ['re_lu_8[0][0]']             
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_10 (Ba  (None, 49, 1, 64)            256       ['pointwise_contract_conv-2[0]
+ tchNormalization)                                                  [0]']                         
+                                                                                                  
+ add_2 (Add)                 (None, 49, 1, 64)            0         ['batch_normalization_10[0][0]
+                                                                    ',                            
+                                                                     're_lu_6[0][0]']             
+                                                                                                  
+ re_lu_9 (ReLU)              (None, 49, 1, 64)            0         ['add_2[0][0]']               
+                                                                                                  
+ pointwise_expand_conv-3 (C  (None, 49, 1, 192)           12288     ['re_lu_9[0][0]']             
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_11 (Ba  (None, 49, 1, 192)           768       ['pointwise_expand_conv-3[0][0
+ tchNormalization)                                                  ]']                           
+                                                                                                  
+ re_lu_10 (ReLU)             (None, 49, 1, 192)           0         ['batch_normalization_11[0][0]
+                                                                    ']                            
+                                                                                                  
+ mtconv-3 (MultiScaleTempor  (None, 49, 1, 192)           1728      ['re_lu_10[0][0]']            
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_12 (Ba  (None, 49, 1, 192)           768       ['mtconv-3[0][0]']            
+ tchNormalization)                                                                                
+                                                                                                  
+ re_lu_11 (ReLU)             (None, 49, 1, 192)           0         ['batch_normalization_12[0][0]
+                                                                    ']                            
+                                                                                                  
+ pointwise_contract_conv-3   (None, 49, 1, 64)            12288     ['re_lu_11[0][0]']            
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_13 (Ba  (None, 49, 1, 64)            256       ['pointwise_contract_conv-3[0]
+ tchNormalization)                                                  [0]']                         
+                                                                                                  
+ add_3 (Add)                 (None, 49, 1, 64)            0         ['batch_normalization_13[0][0]
+                                                                    ',                            
+                                                                     're_lu_9[0][0]']             
+                                                                                                  
+ re_lu_12 (ReLU)             (None, 49, 1, 64)            0         ['add_3[0][0]']               
+                                                                                                  
+ pointwise_expand_conv-4 (C  (None, 49, 1, 192)           12288     ['re_lu_12[0][0]']            
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_14 (Ba  (None, 49, 1, 192)           768       ['pointwise_expand_conv-4[0][0
+ tchNormalization)                                                  ]']                           
+                                                                                                  
+ re_lu_13 (ReLU)             (None, 49, 1, 192)           0         ['batch_normalization_14[0][0]
+                                                                    ']                            
+                                                                                                  
+ mtconv-4 (MultiScaleTempor  (None, 25, 1, 192)           1728      ['re_lu_13[0][0]']            
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_15 (Ba  (None, 25, 1, 192)           768       ['mtconv-4[0][0]']            
+ tchNormalization)                                                                                
+                                                                                                  
+ re_lu_14 (ReLU)             (None, 25, 1, 192)           0         ['batch_normalization_15[0][0]
+                                                                    ']                            
+                                                                                                  
+ strided_residual-4 (Conv2D  (None, 25, 1, 64)            4096      ['re_lu_12[0][0]']            
+ )                                                                                                
+                                                                                                  
+ pointwise_contract_conv-4   (None, 25, 1, 64)            12288     ['re_lu_14[0][0]']            
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_17 (Ba  (None, 25, 1, 64)            256       ['strided_residual-4[0][0]']  
+ tchNormalization)                                                                                
+                                                                                                  
+ batch_normalization_16 (Ba  (None, 25, 1, 64)            256       ['pointwise_contract_conv-4[0]
+ tchNormalization)                                                  [0]']                         
+                                                                                                  
+ re_lu_15 (ReLU)             (None, 25, 1, 64)            0         ['batch_normalization_17[0][0]
+                                                                    ']                            
+                                                                                                  
+ add_4 (Add)                 (None, 25, 1, 64)            0         ['batch_normalization_16[0][0]
+                                                                    ',                            
+                                                                     're_lu_15[0][0]']            
+                                                                                                  
+ re_lu_16 (ReLU)             (None, 25, 1, 64)            0         ['add_4[0][0]']               
+                                                                                                  
+ pointwise_expand_conv-5 (C  (None, 25, 1, 192)           12288     ['re_lu_16[0][0]']            
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_18 (Ba  (None, 25, 1, 192)           768       ['pointwise_expand_conv-5[0][0
+ tchNormalization)                                                  ]']                           
+                                                                                                  
+ re_lu_17 (ReLU)             (None, 25, 1, 192)           0         ['batch_normalization_18[0][0]
+                                                                    ']                            
+                                                                                                  
+ mtconv-5 (MultiScaleTempor  (None, 25, 1, 192)           1728      ['re_lu_17[0][0]']            
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_19 (Ba  (None, 25, 1, 192)           768       ['mtconv-5[0][0]']            
+ tchNormalization)                                                                                
+                                                                                                  
+ re_lu_18 (ReLU)             (None, 25, 1, 192)           0         ['batch_normalization_19[0][0]
+                                                                    ']                            
+                                                                                                  
+ pointwise_contract_conv-5   (None, 25, 1, 64)            12288     ['re_lu_18[0][0]']            
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_20 (Ba  (None, 25, 1, 64)            256       ['pointwise_contract_conv-5[0]
+ tchNormalization)                                                  [0]']                         
+                                                                                                  
+ add_5 (Add)                 (None, 25, 1, 64)            0         ['batch_normalization_20[0][0]
+                                                                    ',                            
+                                                                     're_lu_16[0][0]']            
+                                                                                                  
+ re_lu_19 (ReLU)             (None, 25, 1, 64)            0         ['add_5[0][0]']               
+                                                                                                  
+ pointwise_expand_conv-6 (C  (None, 25, 1, 192)           12288     ['re_lu_19[0][0]']            
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_21 (Ba  (None, 25, 1, 192)           768       ['pointwise_expand_conv-6[0][0
+ tchNormalization)                                                  ]']                           
+                                                                                                  
+ re_lu_20 (ReLU)             (None, 25, 1, 192)           0         ['batch_normalization_21[0][0]
+                                                                    ']                            
+                                                                                                  
+ mtconv-6 (MultiScaleTempor  (None, 25, 1, 192)           1728      ['re_lu_20[0][0]']            
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_22 (Ba  (None, 25, 1, 192)           768       ['mtconv-6[0][0]']            
+ tchNormalization)                                                                                
+                                                                                                  
+ re_lu_21 (ReLU)             (None, 25, 1, 192)           0         ['batch_normalization_22[0][0]
+                                                                    ']                            
+                                                                                                  
+ pointwise_contract_conv-6   (None, 25, 1, 64)            12288     ['re_lu_21[0][0]']            
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_23 (Ba  (None, 25, 1, 64)            256       ['pointwise_contract_conv-6[0]
+ tchNormalization)                                                  [0]']                         
+                                                                                                  
+ add_6 (Add)                 (None, 25, 1, 64)            0         ['batch_normalization_23[0][0]
+                                                                    ',                            
+                                                                     're_lu_19[0][0]']            
+                                                                                                  
+ re_lu_22 (ReLU)             (None, 25, 1, 64)            0         ['add_6[0][0]']               
+                                                                                                  
+ pointwise_expand_conv-7 (C  (None, 25, 1, 192)           12288     ['re_lu_22[0][0]']            
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_24 (Ba  (None, 25, 1, 192)           768       ['pointwise_expand_conv-7[0][0
+ tchNormalization)                                                  ]']                           
+                                                                                                  
+ re_lu_23 (ReLU)             (None, 25, 1, 192)           0         ['batch_normalization_24[0][0]
+                                                                    ']                            
+                                                                                                  
+ mtconv-7 (MultiScaleTempor  (None, 25, 1, 192)           1728      ['re_lu_23[0][0]']            
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_25 (Ba  (None, 25, 1, 192)           768       ['mtconv-7[0][0]']            
+ tchNormalization)                                                                                
+                                                                                                  
+ re_lu_24 (ReLU)             (None, 25, 1, 192)           0         ['batch_normalization_25[0][0]
+                                                                    ']                            
+                                                                                                  
+ pointwise_contract_conv-7   (None, 25, 1, 64)            12288     ['re_lu_24[0][0]']            
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_26 (Ba  (None, 25, 1, 64)            256       ['pointwise_contract_conv-7[0]
+ tchNormalization)                                                  [0]']                         
+                                                                                                  
+ add_7 (Add)                 (None, 25, 1, 64)            0         ['batch_normalization_26[0][0]
+                                                                    ',                            
+                                                                     're_lu_22[0][0]']            
+                                                                                                  
+ re_lu_25 (ReLU)             (None, 25, 1, 64)            0         ['add_7[0][0]']               
+                                                                                                  
+ pointwise_expand_conv-8 (C  (None, 25, 1, 192)           12288     ['re_lu_25[0][0]']            
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_27 (Ba  (None, 25, 1, 192)           768       ['pointwise_expand_conv-8[0][0
+ tchNormalization)                                                  ]']                           
+                                                                                                  
+ re_lu_26 (ReLU)             (None, 25, 1, 192)           0         ['batch_normalization_27[0][0]
+                                                                    ']                            
+                                                                                                  
+ mtconv-8 (MultiScaleTempor  (None, 13, 1, 192)           1728      ['re_lu_26[0][0]']            
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_28 (Ba  (None, 13, 1, 192)           768       ['mtconv-8[0][0]']            
+ tchNormalization)                                                                                
+                                                                                                  
+ re_lu_27 (ReLU)             (None, 13, 1, 192)           0         ['batch_normalization_28[0][0]
+                                                                    ']                            
+                                                                                                  
+ strided_residual-8 (Conv2D  (None, 13, 1, 64)            4096      ['re_lu_25[0][0]']            
+ )                                                                                                
+                                                                                                  
+ pointwise_contract_conv-8   (None, 13, 1, 64)            12288     ['re_lu_27[0][0]']            
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_30 (Ba  (None, 13, 1, 64)            256       ['strided_residual-8[0][0]']  
+ tchNormalization)                                                                                
+                                                                                                  
+ batch_normalization_29 (Ba  (None, 13, 1, 64)            256       ['pointwise_contract_conv-8[0]
+ tchNormalization)                                                  [0]']                         
+                                                                                                  
+ re_lu_28 (ReLU)             (None, 13, 1, 64)            0         ['batch_normalization_30[0][0]
+                                                                    ']                            
+                                                                                                  
+ add_8 (Add)                 (None, 13, 1, 64)            0         ['batch_normalization_29[0][0]
+                                                                    ',                            
+                                                                     're_lu_28[0][0]']            
+                                                                                                  
+ re_lu_29 (ReLU)             (None, 13, 1, 64)            0         ['add_8[0][0]']               
+                                                                                                  
+ pointwise_expand_conv-9 (C  (None, 13, 1, 192)           12288     ['re_lu_29[0][0]']            
+ onv2D)                                                                                           
+                                                                                                  
+ batch_normalization_31 (Ba  (None, 13, 1, 192)           768       ['pointwise_expand_conv-9[0][0
+ tchNormalization)                                                  ]']                           
+                                                                                                  
+ re_lu_30 (ReLU)             (None, 13, 1, 192)           0         ['batch_normalization_31[0][0]
+                                                                    ']                            
+                                                                                                  
+ mtconv-9 (MultiScaleTempor  (None, 13, 1, 192)           1728      ['re_lu_30[0][0]']            
+ alConvolution)                                                                                   
+                                                                                                  
+ batch_normalization_32 (Ba  (None, 13, 1, 192)           768       ['mtconv-9[0][0]']            
+ tchNormalization)                                                                                
+                                                                                                  
+ re_lu_31 (ReLU)             (None, 13, 1, 192)           0         ['batch_normalization_32[0][0]
+                                                                    ']                            
+                                                                                                  
+ pointwise_contract_conv-9   (None, 13, 1, 64)            12288     ['re_lu_31[0][0]']            
+ (Conv2D)                                                                                         
+                                                                                                  
+ batch_normalization_33 (Ba  (None, 13, 1, 64)            256       ['pointwise_contract_conv-9[0]
+ tchNormalization)                                                  [0]']                         
+                                                                                                  
+ add_9 (Add)                 (None, 13, 1, 64)            0         ['batch_normalization_33[0][0]
+                                                                    ',                            
+                                                                     're_lu_29[0][0]']            
+                                                                                                  
+ re_lu_32 (ReLU)             (None, 13, 1, 64)            0         ['add_9[0][0]']               
+                                                                                                  
+ pointwise_expand_conv-10 (  (None, 13, 1, 192)           12288     ['re_lu_32[0][0]']            
+ Conv2D)                                                                                          
+                                                                                                  
+ batch_normalization_34 (Ba  (None, 13, 1, 192)           768       ['pointwise_expand_conv-10[0][
+ tchNormalization)                                                  0]']                          
+                                                                                                  
+ re_lu_33 (ReLU)             (None, 13, 1, 192)           0         ['batch_normalization_34[0][0]
+                                                                    ']                            
+                                                                                                  
+ mtconv-10 (MultiScaleTempo  (None, 13, 1, 192)           1728      ['re_lu_33[0][0]']            
+ ralConvolution)                                                                                  
+                                                                                                  
+ batch_normalization_35 (Ba  (None, 13, 1, 192)           768       ['mtconv-10[0][0]']           
+ tchNormalization)                                                                                
+                                                                                                  
+ re_lu_34 (ReLU)             (None, 13, 1, 192)           0         ['batch_normalization_35[0][0]
+                                                                    ']                            
+                                                                                                  
+ pointwise_contract_conv-10  (None, 13, 1, 64)            12288     ['re_lu_34[0][0]']            
+  (Conv2D)                                                                                        
+                                                                                                  
+ batch_normalization_36 (Ba  (None, 13, 1, 64)            256       ['pointwise_contract_conv-10[0
+ tchNormalization)                                                  ][0]']                        
+                                                                                                  
+ add_10 (Add)                (None, 13, 1, 64)            0         ['batch_normalization_36[0][0]
+                                                                    ',                            
+                                                                     're_lu_32[0][0]']            
+                                                                                                  
+ re_lu_35 (ReLU)             (None, 13, 1, 64)            0         ['add_10[0][0]']              
+                                                                                                  
+ pointwise_expand_conv-11 (  (None, 13, 1, 192)           12288     ['re_lu_35[0][0]']            
+ Conv2D)                                                                                          
+                                                                                                  
+ batch_normalization_37 (Ba  (None, 13, 1, 192)           768       ['pointwise_expand_conv-11[0][
+ tchNormalization)                                                  0]']                          
+                                                                                                  
+ re_lu_36 (ReLU)             (None, 13, 1, 192)           0         ['batch_normalization_37[0][0]
+                                                                    ']                            
+                                                                                                  
+ mtconv-11 (MultiScaleTempo  (None, 13, 1, 192)           1728      ['re_lu_36[0][0]']            
+ ralConvolution)                                                                                  
+                                                                                                  
+ batch_normalization_38 (Ba  (None, 13, 1, 192)           768       ['mtconv-11[0][0]']           
+ tchNormalization)                                                                                
+                                                                                                  
+ re_lu_37 (ReLU)             (None, 13, 1, 192)           0         ['batch_normalization_38[0][0]
+                                                                    ']                            
+                                                                                                  
+ pointwise_contract_conv-11  (None, 13, 1, 64)            12288     ['re_lu_37[0][0]']            
+  (Conv2D)                                                                                        
+                                                                                                  
+ batch_normalization_39 (Ba  (None, 13, 1, 64)            256       ['pointwise_contract_conv-11[0
+ tchNormalization)                                                  ][0]']                        
+                                                                                                  
+ add_11 (Add)                (None, 13, 1, 64)            0         ['batch_normalization_39[0][0]
+                                                                    ',                            
+                                                                     're_lu_35[0][0]']            
+                                                                                                  
+ re_lu_38 (ReLU)             (None, 13, 1, 64)            0         ['add_11[0][0]']              
+                                                                                                  
+ average_pooling2d (Average  (None, 1, 1, 64)             0         ['re_lu_38[0][0]']            
+ Pooling2D)                                                                                       
+                                                                                                  
+ flatten (Flatten)           (None, 64)                   0         ['average_pooling2d[0][0]']   
+                                                                                                  
+ dropout (Dropout)           (None, 64)                   0         ['flatten[0][0]']             
+                                                                                                  
+ dense (Dense)               (None, 4)                    260       ['dropout[0][0]']             
+                                                                                                  
+==================================================================================================
+Total params: 370756 (1.41 MB)
+Trainable params: 359492 (1.37 MB)
+Non-trainable params: 11264 (44.00 KB)
+__________________________________________________________________________________________________
+
+Total MACs: 11.910 M
+Total OPs: 24.206 M
+Name: keyword_spotting_custom_model_v1
+Version: 1
+Description: Keyword classifier model between pay, discount, combo and unknown
+Classes: pay, discount, combo, unknown
+Dataset: /content/drive/MyDrive/iot_challenge/datasets/keyword_dataset
+fe.sample_rate_hz: 16000
+fe.fft_length: 512
+fe.sample_length_ms: 1000
+fe.window_size_ms: 30
+fe.window_step_ms: 10
+fe.filterbank_n_channels: 104
+fe.filterbank_upper_band_limit: 7500.0
+fe.filterbank_lower_band_limit: 125.0
+fe.noise_reduction_enable: True
+fe.noise_reduction_smoothing_bits: 10
+fe.noise_reduction_even_smoothing: 0.01
+fe.noise_reduction_odd_smoothing: 0.03
+fe.noise_reduction_min_signal_remaining: 0.5
+fe.pcan_enable: False
+fe.pcan_strength: 0.95
+fe.pcan_offset: 80.0
+fe.pcan_gain_bits: 21
+fe.log_scale_enable: True
+fe.log_scale_shift: 6
+fe.activity_detection_enable: False
+fe.activity_detection_alpha_a: 0.5
+fe.activity_detection_alpha_b: 0.8
+fe.activity_detection_arm_threshold: 0.75
+fe.activity_detection_trip_threshold: 0.8
+fe.dc_notch_filter_enable: True
+fe.dc_notch_filter_coefficient: 0.95
+fe.quantize_dynamic_scale_enable: True
+fe.quantize_dynamic_scale_range_db: 30.0
+average_window_duration_ms: 1000
+detection_threshold: 200
+suppression_ms: 1000
+minimum_count: 2
+volume_gain: 2.0
+latency_ms: 1
+verbose_model_output_logs: True
+
+Using default ModelCheckpoint callback with following parameters:
+{'filepath': 'best_weights_epoch{epoch:02d}.weights.h5',
+ 'mode': 'max',
+ 'monitor': 'val_accuracy',
+ 'options': None,
+ 'save_best_only': True,
+ 'save_freq': 'epoch',
+ 'save_weights_only': True,
+ 'verbose': 0}
+Enabling model checkpoints
+Using Keras callbacks: TerminateOnNaN, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau, ModelCheckpoint, ModelCheckpoint
+Class weights:
+     pay = 1.00
+discount = 1.00
+   combo = 1.00
+ unknown = 1.00
+Train kwargs:
+{'batch_size': 32,
+ 'callbacks': [<tf_keras.src.callbacks.TerminateOnNaN object at 0x7c9d31bfca40>,
+               <tf_keras.src.callbacks.EarlyStopping object at 0x7c9d31bfca10>,
+               <tf_keras.src.callbacks.LearningRateScheduler object at 0x7c9d31bfc6b0>,
+               <tf_keras.src.callbacks.ReduceLROnPlateau object at 0x7c9d31bfd7c0>,
+               <tf_keras.src.callbacks.ModelCheckpoint object at 0x7c9d300cce30>,
+               <tf_keras.src.callbacks.ModelCheckpoint object at 0x7c9d300a2f60>],
+ 'class_weight': {0: 1.0, 1: 1.0, 2: 0.998589562764457, 3: 1.0014144271570014},
+ 'epochs': 200,
+ 'initial_epoch': 0,
+ 'sample_weight': None,
+ 'shuffle': True,
+ 'steps_per_epoch': None,
+ 'validation_batch_size': None,
+ 'validation_data': <_PrefetchDataset element_spec=(TensorSpec(shape=(None, 98, 1, 104), dtype=tf.float32, name=None), TensorSpec(shape=(None, 4), dtype=tf.float32, name=None))>,
+ 'validation_freq': 1,
+ 'validation_split': 0.0,
+ 'validation_steps': None,
+ 'verbose': 1,
+ 'x': <_PrefetchDataset element_spec=(TensorSpec(shape=(None, 98, 1, 104), dtype=tf.float32, name=None), TensorSpec(shape=(None, 4), dtype=tf.float32, name=None))>,
+ 'y': None}
+Starting model training ...
+Generating /root/.mltk/models/keyword_spotting_custom_model_v1/keyword_spotting_custom_model_v1.h5
+
+
+*** Best training val_accuracy = 0.808
+
+
+Generating /root/.mltk/models/keyword_spotting_custom_model_v1/train/training-history.json
+Generating /root/.mltk/models/keyword_spotting_custom_model_v1/train/training-history.png
+Creating /content/keyword_spotting_custom_model_v1.mltk.zip

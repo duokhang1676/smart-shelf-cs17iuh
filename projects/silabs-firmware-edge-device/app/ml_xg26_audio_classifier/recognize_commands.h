@@ -1,0 +1,148 @@
+/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+   This file has been modified by Silicon Labs.
+   ==============================================================================*/
+
+/**
+* Copyright 2025 Quoc Tinh [C]
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+**/
+
+#ifndef TENSORFLOW_LITE_EXPERIMENTAL_MICRO_EXAMPLES_MICRO_SPEECH_RECOGNIZE_COMMANDS_H_
+#define TENSORFLOW_LITE_EXPERIMENTAL_MICRO_EXAMPLES_MICRO_SPEECH_RECOGNIZE_COMMANDS_H_
+
+#include "tensorflow/lite/c/common.h"
+#include "tensorflow/lite/micro/tflite_bridge/micro_error_reporter.h"
+#include "config/audio_classifier_config.h"
+
+// Partial implementation of std::dequeue, just providing the functionality
+// that's needed.
+class PreviousResultsQueue {
+ public:
+  PreviousResultsQueue(tflite::ErrorReporter* error_reporter)
+      : error_reporter_(error_reporter), front_index_(0), size_(0) {}
+
+  struct Result {
+    Result() : time_(0) {}
+    Result(int32_t time, uint8_t* input_scores) : time_(time) {
+      for (int i = 0; i < MAX_CATEGORY_COUNT; ++i) {
+        scores[i] = input_scores[i];
+      }
+    }
+    int32_t time_;
+    uint8_t scores[MAX_CATEGORY_COUNT];
+  };
+
+  int size() { return size_; }
+  bool empty() { return size_ == 0; }
+  Result& front() { return results_[front_index_]; }
+  Result& back() {
+    int back_index = front_index_ + (size_ - 1);
+    if (back_index >= MAX_RESULT_COUNT) {
+      back_index -= MAX_RESULT_COUNT;
+    }
+    return results_[back_index];
+  }
+
+  void push_back(const Result& entry) {
+    if (size() >= MAX_RESULT_COUNT) {
+      TF_LITE_REPORT_ERROR(
+          error_reporter_,
+          "Couldn't push_back latest result, too many already!");
+      return;
+    }
+    size_ += 1;
+    back() = entry;
+  }
+
+  Result pop_front() {
+    if (size() <= 0) {
+      TF_LITE_REPORT_ERROR(error_reporter_,
+                           "Couldn't pop_front result, none present!");
+      return Result();
+    }
+    Result result = front();
+    front_index_ += 1;
+    if (front_index_ >= MAX_RESULT_COUNT) {
+      front_index_ = 0;
+    }
+    size_ -= 1;
+    return result;
+  }
+
+  Result& from_front(int offset) {
+    if ((offset < 0) || (offset >= size_)) {
+      TF_LITE_REPORT_ERROR(error_reporter_,
+                           "Attempt to read beyond the end of the queue!");
+      offset = size_ - 1;
+    }
+    int index = front_index_ + offset;
+    if (index >= MAX_RESULT_COUNT) {
+      index -= MAX_RESULT_COUNT;
+    }
+    return results_[index];
+  }
+
+ private:
+  tflite::ErrorReporter* error_reporter_;
+  Result results_[MAX_RESULT_COUNT];
+  int front_index_;
+  int size_;
+};
+
+class RecognizeCommands {
+ public:
+  explicit RecognizeCommands(tflite::ErrorReporter* error_reporter,
+                            int32_t average_window_duration_ms = 800,
+                            uint8_t detection_threshold = 230,
+                            int32_t suppression_ms = 2000,
+                            int32_t minimum_count = 2,
+                            bool ignore_underscore = true);
+
+  TfLiteStatus ProcessLatestResults(const TfLiteTensor* latest_results,
+                                    const int32_t current_time_ms,
+                                    uint8_t* found_command_index,
+                                    uint8_t* score, bool* is_new_command);
+
+ private:
+  tflite::ErrorReporter* error_reporter_;
+  int32_t average_window_duration_ms_;
+  uint8_t detection_threshold_;
+  int32_t suppression_ms_;
+  int32_t minimum_count_;
+  bool ignore_underscore_;
+  PreviousResultsQueue previous_results_;
+  uint8_t previous_top_label_index_;
+  int32_t previous_top_label_time_;
+};
+
+// Define category_count based on MAX_CATEGORY_COUNT from audio_classifier_config.h
+static const int category_count = MAX_CATEGORY_COUNT;
+
+// Declare get_category_label function
+const char* get_category_label(int index);
+
+#endif  // TENSORFLOW_LITE_EXPERIMENTAL_MICRO_EXAMPLES_MICRO_SPEECH_RECOGNIZE_COMMANDS_H_

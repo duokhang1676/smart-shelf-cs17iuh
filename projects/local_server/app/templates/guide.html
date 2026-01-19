@@ -1,0 +1,244 @@
+<!--
+* Copyright 2025 Tran Vu Thuy Trang [C]
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng dẫn sử dụng</title>
+    
+    <!-- Critical Resource Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Critical CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guide.css') }}">
+    
+    <!-- Font CSS - Load asynchronously -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap"></noscript>
+    
+    <!-- Module preload for critical JS -->
+    <link rel="modulepreload" href="/static/js/navigation.js">
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navigation-bar">
+    <div class="nav-brand">
+        <span class="nav-brand-text">CS17IUH</span>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link" title="Trang chủ">
+            <span class="nav-text">Trang chủ</span>
+        </a>
+        <a href="/shelf" class="nav-link" title="Kệ sản phẩm">
+            <span class="nav-text">Kệ hàng</span>
+        </a>
+        <a href="/combo" class="nav-link" title="Combo khuyến mãi">
+            <span class="nav-text">Combo</span>
+        </a>
+        <a href="/cart" class="nav-link" title="Giỏ hàng">
+            <span class="nav-text">Giỏ hàng</span>
+        </a>
+        <a href="/guide" class="nav-link active" title="Hướng dẫn sử dụng kệ">
+            <span class="nav-text">Hướng dẫn</span>
+        </a>
+        <div class="nav-dropdown">
+            <a href="#" class="nav-link" title="Cài đặt hệ thống" onclick="toggleSettingsDropdown(event)">
+                <img src="/static/img/setting.png" alt="Settings">
+            </a>
+            <div class="dropdown-menu" id="settingsDropdown">
+                <a href="/sensor-data" class="dropdown-item">
+                    <span>Dữ liệu môi trường</span>
+                </a>
+                <a href="/mobile-app" class="dropdown-item">
+                    <span>Nhân viên</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="content-wrapper">
+    <div class="container">
+        <h1>Hướng dẫn sử dụng kệ bán hàng tự động</h1>
+        
+        <div class="shelf-demo">            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Lấy sản phẩm trên kệ</div>
+                    <div class="step-description">
+                        Vui lòng lấy sản phẩm bạn muốn mua trên kệ.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Kiểm tra giỏ hàng</div>
+                    <div class="step-description">
+                        Xem các sản phẩm đã chọn, combo áp dụng và kiểm tra tổng tiền.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Xác nhận thanh toán</div>
+                    <div class="step-description">
+                        Bấm nút "Xác nhận thanh toán" hoặc nói "Thanh toán".
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">In hóa đơn</div>
+                    <div class="step-description">
+                        Tùy chọn in hóa đơn.
+                    </div>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <div class="step-title">Quét mã thanh toán</div>
+                    <div class="step-description">
+                        Quét mã QR và thực hiện thanh toán qua ngân hàng hoặc ví điện tử.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="warning">
+            <h4>Lưu ý quan trọng</h4>
+            <p>• Nếu muốn trả lại sản phẩm, hãy đặt trở lại đúng vị trí ban đầu</p>
+            <p>• Không để dị vật trên kệ</p>
+            <p><b>• Hệ thống sẽ phát cảnh báo nếu rời đi mà chưa thanh toán, nhớ thanh toán trước khi đi bạn nhé 🙏</b></p>
+        </div>
+    </div>
+    
+    <!-- Socket.IO for WebSocket communication -->
+    <script src="/vendor/socket.io.min.js"></script>
+    <script>
+        // Initialize WebSocket for real-time shelf status
+        const socket = io();
+        let isConnected = false;
+        
+        socket.on('connect', function() {
+            console.log('WebSocket connected to shelf guide page');
+            isConnected = true;
+            updateConnectionStatus('Đã kết nối với hệ thống kệ');
+        });
+        
+        socket.on('disconnect', function() {
+            console.log('WebSocket disconnected from shelf guide page');
+            isConnected = false;
+            updateConnectionStatus('Mất kết nối với hệ thống kệ');
+        });
+        
+        // Listen for loadcell status updates
+        socket.on('loadcell_connected', function(data) {
+            console.log('Loadcell connected:', data);
+            updateConnectionStatus('Hệ thống kệ hoạt động bình thường');
+        });
+        
+        socket.on('loadcell_disconnected', function(data) {
+            console.log('Loadcell disconnected:', data);
+            updateConnectionStatus('Hệ thống kệ tạm thời mất kết nối');
+        });
+        
+        // Listen for loadcell updates to detect taken quantities
+        socket.on('loadcell_update', function(data) {
+            console.log('Loadcell update received on guide page:', data);
+            
+            // Check for taken quantity changes and redirect to cart
+            if (data.taken_quantity && Array.isArray(data.taken_quantity)) {
+                const currentTakenQuantities = data.taken_quantity;
+                
+                // Check if any product has been taken (taken quantity > 0)
+                const hasProductTaken = currentTakenQuantities.some(qty => qty > 0);
+                console.log('Has product taken:', hasProductTaken, 'Current quantities:', currentTakenQuantities);
+                
+                if (hasProductTaken) {
+                    console.log('Product taken detected on guide page, redirecting to cart page...');
+                    window.location.href = '/cart';
+                }
+            }
+        });
+        
+        // Update connection status display
+        function updateConnectionStatus(message) {
+            const statusDisplay = document.querySelector('.status-display p');
+            if (statusDisplay) {
+                const currentTime = new Date().toLocaleTimeString('vi-VN');
+                statusDisplay.textContent = `${message} (Cập nhật lúc: ${currentTime})`;
+            }
+        }
+        
+        // Listen for navigation events
+        socket.on('redirect_to_cart', function(data) {
+            console.log('Voice command: redirect to cart');
+            window.location.href = '/cart';
+        });
+        
+        socket.on('redirect_to_main', function(data) {
+            console.log('Voice command: redirect to main page');
+            window.location.href = '/';
+        });
+        
+        socket.on('redirect_to_combo', function(data) {
+            console.log('Voice command: redirect to combo page');
+            window.location.href = '/combo';
+        });
+        
+        // RFID event listener - handle employee adding max_quantity
+        socket.on('employee_adding_max_quantity', function(data) {
+            console.log('RFID detected: employee adding max_quantity, redirecting to shelf page');
+            window.location.href = data.url || '/shelf';
+        });
+        
+        // Add some interactive animations
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+        
+        // Add click effect to navigation buttons
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+    </script>
+
+    <!-- Load navigation script deferred -->
+    <script src="/static/js/navigation.js" defer></script>
+</body>
+</html>

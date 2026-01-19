@@ -1,0 +1,165 @@
+<!--
+* Copyright 2025 Tran Vu Thuy Trang [C]
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings</title>
+    
+    <!-- Critical Resource Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Critical CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
+    <link rel="stylesheet" href="/static/css/setting.css">
+    
+    <!-- Font CSS - Load asynchronously -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap"></noscript>
+    
+    <!-- Module preload for critical JS -->
+    <link rel="modulepreload" href="/static/js/navigation.js">
+</head>
+<body data-page="setting">
+<!-- Navigation Bar -->
+<nav class="navigation-bar">
+    <div class="nav-brand">
+        <span class="nav-brand-text">CS17IUH</span>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link" title="Trang chủ">
+            <span class="nav-text">Trang chủ</span>
+        </a>
+        <a href="/shelf" class="nav-link" title="Kệ sản phẩm">
+            <span class="nav-text">Kệ hàng</span>
+        </a>
+        <a href="/combo" class="nav-link" title="Combo khuyến mãi">
+            <span class="nav-text">Combo</span>
+        </a>
+        <a href="/cart" class="nav-link" title="Giỏ hàng">
+            <span class="nav-text">Giỏ hàng</span>
+        </a>
+        <a href="/guide" class="nav-link" title="Hướng dẫn sử dụng kệ">
+            <span class="nav-text">Hướng dẫn</span>
+        </a>
+        <div class="nav-dropdown">
+            <a href="#" class="nav-link active" title="Cài đặt hệ thống" onclick="toggleSettingsDropdown(event)">
+                <img src="/static/img/setting.png" alt="Settings">
+            </a>
+            <div class="dropdown-menu" id="settingsDropdown">
+                <a href="#" class="dropdown-item" onclick="showSensorData(event)">
+                    <span>Dữ liệu môi trường</span>
+                </a>
+                <a href="#" class="dropdown-item" onclick="showMobileApp(event)">
+                    <span>Nhân viên</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="content-wrapper">
+    <div class="container">
+        <div class="setting-container">
+            <!-- Dữ liệu môi trường Section -->
+            <div id="sensorDataSection" class="content-section active">
+                <div class="page-header">
+                    <h1 class="page-title">Dữ liệu môi trường</h1>
+                    <div class="header-controls">
+                        <div class="last-update" id="lastUpdate">
+                            Đang tải dữ liệu...
+                        </div>
+                        <button class="refresh-btn" onclick="loadSensorData()">
+                            <img src="/static/img/refresh-page-option.png" alt="Refresh"> Cập nhật dữ liệu
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="sensor-grid">
+                    <div class="sensor-card">
+                        <div class="sensor-title">📈 Pressure</div>
+                        <div class="sensor-value" id="pressure">--</div>
+                        <div class="sensor-unit">hPa</div>
+                    </div>
+                    
+                    <div class="sensor-card">
+                        <div class="sensor-title">🌡️ Temperature</div>
+                        <div class="sensor-value" id="temperature">--</div>
+                        <div class="sensor-unit">°C</div>
+                    </div>
+                    
+                    <div class="sensor-card">
+                        <div class="sensor-title">💧 Humidity</div>
+                        <div class="sensor-value" id="humidity">--</div>
+                        <div class="sensor-unit">%</div>
+                    </div>
+                    
+                    <div class="sensor-card">
+                        <div class="sensor-title">💡 Light</div>
+                        <div class="sensor-value" id="light">--</div>
+                        <div class="sensor-unit">lux</div>
+                    </div>
+                    
+                    <div class="sensor-card">
+                        <div class="sensor-title">🔊 Sound</div>
+                        <div class="sensor-value" id="sound">--</div>
+                        <div class="sensor-unit">dB</div>
+                    </div>
+                    
+                    <div class="sensor-card">
+                        <div class="sensor-title">🧭 Magnetic</div>
+                        <div class="sensor-value" id="magnetic">--</div>
+                        <div class="sensor-unit">μT</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile App Section -->
+            <div id="mobileAppSection" class="content-section">
+                <div class="page-header">
+                    <h1 class="page-title">Nhân viên</h1>
+                    <p class="page-description">Quét mã QR trên ứng dụng nhân viên để thêm hàng</p>
+                </div>
+                
+                <div class="mobile-app-content">
+                    <div class="app-image-container">
+                        <div id="qrcode" style="display: flex; justify-content: center; align-items: center; flex-direction: column;"></div>
+                        <p class="app-image-description">Quét mã QR trên ứng dụng</p>
+                    </div>
+                    
+                    <!-- <div class="app-features">
+                        <h3>Tính năng chính:</h3>
+                        <ul>
+                            <li>Theo dõi trạng thái kệ hàng từ xa</li>
+                            <li>Xem dữ liệu sensor real-time</li>
+                            <li>Nhận thông báo về trạng thái hệ thống</li>
+                            <li>Điều khiển các thiết bị từ xa</li>
+                        </ul>
+                    </div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load setting script and navigation script deferred -->
+    <script src="/static/js/vendor/qrcode.min.js" onload="console.log('Local QRCode library loaded successfully')" onerror="console.error('Failed to load local QRCode library')"></script>
+    <script src="/static/js/setting.js"></script>
+    <script src="/static/js/navigation.js"></script>
+</div>
+</body>
+</html>

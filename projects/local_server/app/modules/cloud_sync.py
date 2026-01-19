@@ -1,0 +1,131 @@
+'''
+* Copyright 2025 Vo Duong Khang [C]
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+'''
+import requests
+import json
+import os
+import dotenv
+from dotenv import load_dotenv
+from app.modules import globals
+
+def load_products_from_cloud():
+    load_dotenv()
+    url = os.getenv("GET_PRODUCTS_API_KEY")
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()["products"]
+
+        prefix = "http://ducdatphat.id.vn:3000"
+        for product in data:
+            img_url = product.get("img_url", "")
+            if img_url and not img_url.startswith("http"):
+                product["img_url"] = str(prefix + img_url)
+
+        json_path = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'products.json')
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+        print("Data written to products.json")
+        globals.set_products_data(data)
+        globals.set_products_weight(globals.load_weight_of_one(data))
+        globals.set_products_price(globals.load_products_price(data))
+        globals.set_products_name(globals.load_products_name(data))
+        products_name_decimal, products_name_char_count = globals.load_products_name_decimal(globals.get_products_name())
+        globals.set_products_name_char_count(products_name_char_count)
+        globals.set_products_name_decimal(products_name_decimal)
+    else:
+        print(f"Failed to retrieve products: {response.status_code}")
+
+def load_rfids_from_cloud():
+    load_dotenv()
+    url = os.getenv("GET_RFIDS_API_KEY")
+    response = requests.get(url)
+    if response.status_code == 200:
+        rfids = [user["rfid"] for user in response.json()["users"]]
+        json_path = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'rfids.json')
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(rfids, f, ensure_ascii=False, indent=4)
+        print("Data written to rfids.json")
+        globals.set_rfids(rfids)
+    else:
+        print(f"Failed to retrieve rfids: {response.status_code}")
+
+def load_combo_from_cloud():
+    load_dotenv()
+    url = os.getenv("GET_COMBOS_API_KEY")
+    response = requests.get(url)
+    if response.status_code == 200:
+        api_data = response.json()["data"]
+        combos = []
+        for i, combo in enumerate(api_data, start=1):
+            combos.append({
+                "id":combo["_id"],
+                "name": combo["name"],
+                "desc": combo.get("description", ""),
+                "img": "http://ducdatphat.id.vn:3000/" + combo.get("image", ""),
+                "price": combo.get("price", 0),
+                "oldPrice": combo.get("oldPrice", 0),
+                "validFrom": combo.get("validFrom"),
+                "validTo": combo.get("validTo"),
+                "products": [p["_id"] for p in combo.get("products", [])]
+            })
+        json_path = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'combo.json')
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(combos, f, ensure_ascii=False, indent=4)
+        print("Data written to combo.json")
+    else:
+        print(f"Failed to retrieve combos: {response.status_code}")
+
+def load_posters_from_cloud():
+    load_dotenv()
+    url = os.getenv("GET_POSTERS_API_KEY")
+    response = requests.get(url)
+    if response.status_code == 200:
+        api_data = response.json()["data"]
+        posters = []
+        for i, poster in enumerate(api_data, start=1):
+            posters.append({
+                "image_url": poster.get("image_url", "")
+            })
+        json_path = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'slideshow_images.json')
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(posters, f, ensure_ascii=False, indent=4)
+        print("Data written to slideshow_images.json")
+    else:
+        print(f"Failed to retrieve posters: {response.status_code}")
+
+def post_order_data_to_cloud(order_data):
+    load_dotenv()
+    file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame/frame_box.jpg"))
+    url = os.getenv("POST_ORDER_API_KEY")
+    with open(file_path, "rb") as f:
+        files = {"file": (os.path.basename(file_path), f, "image/jpeg")}
+        response = requests.post(url, files=files, data=order_data, timeout=30)
+
+        if response.ok:
+            print("Order data posted successfully")
+            print(response.text)
+        else:
+            print(f"Failed to post order data: {response.status_code}")
+            print(response.text)
+
+def post_history_added_products_to_cloud(history_added_data):
+    load_dotenv()
+    url = os.getenv("POST_HISTORY_ADDED_PRODUCTS_API_KEY")
+    response = requests.post(url, json=history_added_data)
+    if response.status_code == 201:
+        print("History added data posted successfully")
+    else:
+        print(f"Failed to post history added data: {response.status_code}")
+        print(response.text)

@@ -1,0 +1,76 @@
+'''
+* Copyright 2025 Tran Vu Thuy Trang [C]
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+'''
+"""
+WebSocket utility functions for handling real-time updates
+"""
+from flask_socketio import emit
+
+
+def emit_loadcell_update(socketio, loadcell_data, cart):
+    """Emit loadcell update event to all connected clients"""
+    try:
+        from app.utils.loadcell_utils import get_error_codes_info
+        
+        error_codes = get_error_codes_info()
+        
+        event_data = {
+            'loadcell_data': loadcell_data,
+            'taken_quantity': loadcell_data,  # Add this for compatibility
+            'cart': cart,
+            'error_codes': error_codes
+        }
+        
+        socketio.emit('loadcell_update', event_data)
+        return True
+    except Exception as e:
+        return False
+
+
+def emit_connection_status(socketio, status, message):
+    """Emit connection status change to all connected clients"""
+    try:
+        if status == "connected":
+            socketio.emit('loadcell_connected', {
+                'status': 'connected',
+                'message': message or 'Loadcell connected successfully!'
+            })
+        elif status == "connecting":
+            socketio.emit('loadcell_connecting', {
+                'status': 'connecting',
+                'message': message or 'Connecting to loadcell...'
+            })
+        elif status == "disconnected":
+            socketio.emit('loadcell_disconnected', {
+                'status': 'disconnected',
+                'message': message or 'Loadcell disconnected'
+            })
+        elif status == "error":
+            socketio.emit('loadcell_error', {
+                'status': 'error',
+                'message': message or 'Loadcell connection error'
+            })
+        return True
+    except Exception as e:
+        return False
+
+
+def emit_cart_reset(socketio, message="Cart cleared"):
+    """Emit cart reset event to all connected clients"""
+    try:
+        socketio.emit('cart_reset', {'message': message})
+        return True
+    except Exception as e:
+        return False

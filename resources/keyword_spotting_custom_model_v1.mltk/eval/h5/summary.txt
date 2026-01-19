@@ -1,0 +1,14 @@
+Name: keyword_spotting_custom_model_v1
+Model Type: classification
+Overall accuracy: 93.298%
+Class accuracies:
+- pay = 98.592%
+- combo = 95.775%
+- discount = 90.845%
+- unknown = 87.943%
+Average ROC AUC: 98.505%
+Class ROC AUC:
+- combo = 99.225%
+- pay = 98.446%
+- discount = 98.413%
+- unknown = 97.935%

@@ -1,0 +1,519 @@
+<!--
+* Copyright 2025 Tran Vu Thuy Trang [C]
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combo Ưu Đãi</title>
+    
+    <!-- Critical Resource Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.socket.io" crossorigin>
+    
+    <!-- Critical CSS -->
+    <link rel="stylesheet" href="/static/css/navigation.css">
+    <link rel="stylesheet" href="/static/css/combo.css?v=1.0.5">
+    
+    <!-- Font CSS - Load asynchronously -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aladin&family=Montserrat:wght@300;400;500;600;700&display=swap"></noscript>
+    
+    <!-- Module preload for critical JS -->
+    <link rel="modulepreload" href="/static/js/navigation.js">
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navigation-bar">
+    <div class="nav-brand">
+        <span class="nav-brand-text">CS17IUH</span>
+    </div>
+    <div class="nav-links">
+        <a href="/" class="nav-link" title="Trang chủ">
+            <span class="nav-text">Trang chủ</span>
+        </a>
+        <a href="/shelf" class="nav-link" title="Kệ sản phẩm">
+            <span class="nav-text">Kệ hàng</span>
+        </a>
+        <a href="/combo" class="nav-link active" title="Combo khuyến mãi">
+            <span class="nav-text">Combo</span>
+        </a>
+        <a href="/cart" class="nav-link" title="Giỏ hàng">
+            <span class="nav-text">Giỏ hàng</span>
+        </a>
+        <a href="/guide" class="nav-link" title="Hướng dẫn sử dụng kệ">
+            <span class="nav-text">Hướng dẫn</span>
+        </a>
+        <div class="nav-dropdown">
+            <a href="#" class="nav-link" title="Cài đặt hệ thống" onclick="toggleSettingsDropdown(event)">
+                <img src="/static/img/setting.png" alt="Settings">
+            </a>
+            <div class="dropdown-menu" id="settingsDropdown">
+                <a href="/sensor-data" class="dropdown-item">
+                    <span>Dữ liệu môi trường</span>
+                </a>
+                <a href="/mobile-app" class="dropdown-item">
+                    <span>Nhân viên</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="content-wrapper">
+<div class="container">
+    <h1>ƯU ĐÃI SẢN PHẨM</h1>
+    <div class="combo-list" id="comboList">
+    </div>
+    
+<script>
+let combos = [];
+let products = [];
+
+// Fetch combos and products, then render
+Promise.all([
+  fetch('/api/combos').then(res => res.json()),
+  fetch('/api/all-products').then(res => res.json())
+])
+.then(([comboData, productData]) => {
+  combos = comboData;
+  products = productData;
+  renderCombos();
+})
+.catch(() => {
+  document.getElementById('comboList').innerHTML = '<div style="color:red">Không tải được dữ liệu combo hoặc sản phẩm!</div>';
+});
+
+function formatMoney(val) {
+    return (val || 0).toLocaleString('vi-VN') + ' ₫';
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit' 
+    });
+}
+
+function renderCombos() {
+    const comboList = document.getElementById('comboList');
+    comboList.innerHTML = '';
+    combos.forEach(combo => {
+        // Get product information in combo
+        const comboProducts = (combo.products || []).map(pid => products.find(p => p.id === pid)).filter(Boolean);
+        // Get first product image in combo (if combo doesn't have its own image)
+        let comboImg = combo.img;
+        if (!comboImg && comboProducts.length > 0) comboImg = comboProducts[0].img;
+        const item = document.createElement('div');
+        item.className = 'combo-item';
+        item.innerHTML = `
+            <img src="${comboImg || '/static/img/no-image.jpg'}" alt="${combo.name}" class="combo-img" loading="lazy" decoding="async">
+            <div class="combo-name">${combo.name}</div>
+            <div class="combo-desc">${combo.desc || ''}</div>
+            <div class="combo-products">
+                ${comboProducts.map(p => `<div class="combo-product-item"><img src="${p.img || '/static/img/no-image.jpg'}" class="combo-product-img" loading="lazy" decoding="async">${p.name}</div>`).join('')}
+            </div>
+            <div class="combo-price">
+                ${formatMoney(combo.price)}
+                <span class="combo-old-price">${formatMoney(combo.oldPrice)}</span>
+            </div>
+            <div class="combo-validity">
+                Hiệu lực: ${formatDate(combo.validFrom)} - ${formatDate(combo.validTo)}
+            </div>
+        `;
+        comboList.appendChild(item);
+    });
+}
+
+// Initialize WebSocket connection for monitoring taken quantity changes
+let socket = null;
+let isConnected = false;
+let lastTakenQuantities = [];
+
+// Wait for Socket.IO to load before initializing
+function initializeWebSocket() {
+    if (typeof io !== 'undefined') {
+        socket = io();
+        
+        // Notify server that we left slideshow page when entering combo page
+        socket.emit('slideshow_page_leave');
+
+        socket.on('connect', function() {
+            console.log('WebSocket connected to combo page for monitoring taken quantities');
+            isConnected = true;
+        });
+
+        socket.on('disconnect', function() {
+            console.log('WebSocket disconnected from combo page');
+            isConnected = false;
+        });
+
+        // Listen for RFID events from hardware backend listener
+        socket.on('employee_adding_max_quantity', function(data) {
+            console.log('RFID detected: employee adding max_quantity, redirecting to shelf page');
+            window.location.href = data.url || '/shelf';
+        });
+
+        socket.on('max_quantity_added_notification', function(data) {
+            console.log('Max quantity added notification:', data);
+            alert('Thành công! ' + (data.message || 'Đã cập nhật số lượng sản phẩm.'));
+        });
+
+        // Listen for loadcell updates to detect taken quantities
+        socket.on('loadcell_update', function(data) {
+            console.log('Loadcell update received on combo page:', data);
+            console.log('Taken quantity data:', data.taken_quantity);
+            
+            if (data.taken_quantity && Array.isArray(data.taken_quantity)) {
+                const currentTakenQuantities = data.taken_quantity;
+                
+                // Check if any product has been taken (taken quantity > 0)
+                const hasProductTaken = currentTakenQuantities.some(qty => qty > 0);
+                console.log('Has product taken:', hasProductTaken, 'Current quantities:', currentTakenQuantities);
+                
+                if (hasProductTaken) {
+                    console.log('Product taken detected, redirecting to cart page...');
+                    
+                    // Show a brief notification before redirecting
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: rgba(76, 175, 80, 0.9);
+                        color: white;
+                        padding: 15px 20px;
+                        border-radius: 8px;
+                        font-weight: bold;
+                        z-index: 9999;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    `;
+                    notification.textContent = 'Phát hiện sản phẩm được lấy! Chuyển đến giỏ hàng...';
+                    document.body.appendChild(notification);
+                    
+                    // Redirect to cart immediately
+                    console.log('Executing redirect to cart page');
+                    window.location.href = '/cart';
+                }
+                
+                // Update last known taken quantities
+                lastTakenQuantities = [...currentTakenQuantities];
+            } else {
+                console.log('No taken_quantity data or not an array:', data.taken_quantity);
+            }
+        });
+
+        // Listen for create order and redirect
+        socket.on('create_order_and_redirect', function(data) {
+            console.log('Create order and redirect event:', data);
+            
+            // Show a brief notification before redirecting
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(255, 193, 7, 0.9);
+                color: black;
+                padding: 15px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 9999;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            notification.textContent = data.message || 'Đang tạo đơn hàng và chuyển đến thanh toán...';
+            document.body.appendChild(notification);
+            
+            // Create order first, then redirect
+            createOrderFromVoiceCommand();
+        });
+    } else {
+        // Retry after a short delay if Socket.IO not loaded yet
+        setTimeout(initializeWebSocket, 100);
+    }
+}
+
+// Initialize WebSocket connection for monitoring taken quantity changes
+document.addEventListener('DOMContentLoaded', function() {
+    initializeWebSocket();
+});
+
+// Function to create order from voice command
+async function createOrderFromVoiceCommand() {
+    try {
+        console.log('Creating order from voice command...');
+        
+        // First, process cart to get proper pricing
+        const processResponse = await fetch('/api/cart/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!processResponse.ok) {
+            throw new Error('Failed to process cart');
+        }
+        
+        const processData = await processResponse.json();
+        console.log('Cart processed:', processData);
+        
+        // Then create the order
+        const orderResponse = await fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                items: processData.items || processData.products || [],
+                total: processData.total || 0,
+                source: 'voice_command_combo_page'
+            })
+        });
+        
+        if (!orderResponse.ok) {
+            throw new Error('Failed to create order');
+        }
+        
+        const orderData = await orderResponse.json();
+        console.log('Order created successfully:', orderData);
+        
+        // Redirect to QR page
+        setTimeout(() => {
+            window.location.href = '/qr';
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error creating order from voice command:', error);
+        
+        // Show error notification
+        const errorNotification = document.createElement('div');
+        errorNotification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        `;
+        errorNotification.textContent = 'Lỗi tạo đơn hàng! Vui lòng thử lại.';
+        document.body.appendChild(errorNotification);
+        
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            if (errorNotification.parentNode) {
+                errorNotification.parentNode.removeChild(errorNotification);
+            }
+        }, 3000);
+    }
+}
+
+// Listen for loadcell updates to detect taken quantities
+socket.on('loadcell_update', function(data) {
+    console.log('Loadcell update received on combo page:', data);
+    console.log('Taken quantity data:', data.taken_quantity);
+    
+    if (data.taken_quantity && Array.isArray(data.taken_quantity)) {
+        const currentTakenQuantities = data.taken_quantity;
+        
+        // Check if any product has been taken (taken quantity > 0)
+        const hasProductTaken = currentTakenQuantities.some(qty => qty > 0);
+        console.log('Has product taken:', hasProductTaken, 'Current quantities:', currentTakenQuantities);
+        
+        if (hasProductTaken) {
+            console.log('Product taken detected, redirecting to cart page...');
+            
+            // Show a brief notification before redirecting
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(76, 175, 80, 0.9);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 9999;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            notification.textContent = 'Phát hiện sản phẩm được lấy! Chuyển đến giỏ hàng...';
+            document.body.appendChild(notification);
+            
+            // Redirect to cart immediately
+            console.log('Executing redirect to cart page');
+            window.location.href = '/cart';
+        }
+        
+        // Update last known taken quantities
+        lastTakenQuantities = [...currentTakenQuantities];
+    } else {
+        console.log('No taken_quantity data or not an array:', data.taken_quantity);
+    }
+});
+
+// Listen for combo detection and redirect
+socket.on('redirect_to_combo', function(data) {
+    console.log('Combo detection event received:', data);
+    // Already on combo page, no need to redirect
+});
+
+// Listen for QR page redirect
+socket.on('redirect_to_qr', function(data) {
+    console.log('QR page redirect event received:', data);
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(156, 39, 176, 0.9);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.textContent = data.message || 'Redirecting to QR page...';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        window.location.href = data.url || '/qr';
+    }, 1500);
+});
+
+// Voice command: redirect to cart page
+socket.on('redirect_to_cart', function(data) {
+    console.log('Voice command: redirect to cart page');
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(76, 175, 80, 0.9);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.textContent = data.message || 'Đang chuyển đến giỏ hàng...';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        window.location.href = data.url || '/cart';
+    }, 1500);
+});
+
+// Voice command: redirect to main/slideshow page
+socket.on('redirect_to_main', function(data) {
+    console.log('Voice command: redirect to main page');
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(33, 150, 243, 0.9);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.textContent = data.message || 'Đang quay về trang chính...';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        window.location.href = data.url || '/';
+    }, 1500);
+});
+
+// Voice command: empty cart notification
+socket.on('empty_cart_notification', function(data) {
+    console.log('Voice command: empty cart notification');
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 152, 0, 0.9);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.textContent = data.message || 'Giỏ hàng trống!';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 4000);
+});
+
+// Voice command: create order and redirect to payment
+socket.on('create_order_and_redirect', function(data) {
+    console.log('Voice command: create order and redirect to payment');
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(156, 39, 176, 0.9);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.textContent = data.message || 'Đang chuyển đến thanh toán...';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        window.location.href = '/qr';
+    }, 1500);
+});
+
+</script>
+
+<!-- Load scripts deferred for better performance -->
+<script src="/vendor/socket.io.min.js" defer></script>
+<script src="/static/js/navigation.js" defer></script>
+</div>
+</div>
+</body>
+</html>

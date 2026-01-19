@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./IOT_challenge_BE
+    container_name: iot-backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./IOT_challenge_BE/.env
+    restart: unless-stopped
+    volumes:
+      - ./public/uploads:/app/public/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5 # Tăng số lần thử
+      start_period: 30s # Tăng thời gian khởi động
+  frontend:
+    build:
+      context: ./IOT_challenge
+    container_name: iot-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - VITE_API_ENDPOINT=http://iot-backend:3000/api
+    restart: unless-stopped

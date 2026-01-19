@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="6dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/imgShelf"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/shelf_image"
+            android:src="@drawable/ic_menu_gallery"
+            android:background="@drawable/circle_background"
+            android:layout_marginEnd="12dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/txtShelfName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Kệ A1"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            app:layout_constraintStart_toEndOf="@id/imgShelf"
+            app:layout_constraintTop_toTopOf="@id/imgShelf"
+            app:layout_constraintEnd_toStartOf="@id/btnDetails"
+            android:ellipsize="end"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/txtShelfId"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="ID: A1"
+            android:textSize="13sp"
+            android:textColor="@color/purple_700"
+            app:layout_constraintStart_toStartOf="@id/txtShelfName"
+            app:layout_constraintTop_toBottomOf="@id/txtShelfName"
+            app:layout_constraintEnd_toStartOf="@id/btnDetails"
+            android:ellipsize="end"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/txtShelfLocation"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Vị trí: Tầng 1"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            app:layout_constraintStart_toStartOf="@id/txtShelfName"
+            app:layout_constraintTop_toBottomOf="@id/txtShelfId"
+            app:layout_constraintEnd_toStartOf="@id/btnDetails"
+            android:ellipsize="end"
+            android:maxLines="2" />
+
+        <!-- Added meta TextView required by adapter -->
+        <TextView
+            android:id="@+id/txtShelfMeta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            app:layout_constraintStart_toStartOf="@id/txtShelfName"
+            app:layout_constraintTop_toBottomOf="@id/txtShelfLocation"
+            app:layout_constraintEnd_toStartOf="@id/btnDetails"
+            android:ellipsize="end"
+            android:maxLines="1" />
+
+        <LinearLayout
+            android:id="@+id/btnDetails"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_more"
+                android:contentDescription="@string/details" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chi tiết"
+                android:textSize="11sp"
+                android:textColor="@android:color/darker_gray" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

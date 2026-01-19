@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:id="@+id/group_static" android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_shelf_history"
+            android:icon="@drawable/ic_menu_gallery"
+            android:title="Lịch sử thêm hàng" />
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/ic_menu_gallery"
+            android:title="Danh sách kệ hàng" />
+        <!-- <item
+            android:id="@+id/nav_slideshow"
+            android:icon="@drawable/ic_menu_slideshow"
+            android:title="@string/menu_slideshow" /> -->
+    </group>
+</menu>
