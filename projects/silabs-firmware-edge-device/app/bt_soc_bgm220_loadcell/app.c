@@ -41,7 +41,7 @@ extern sl_i2cspm_t *sl_i2cspm_mikroe;
 // loadcell information
 int32_t offset[LOADCELL_NUM] = {0};
 int scale[LOADCELL_NUM] = {400};
-int scale_weight = 515; // use Aquafina 500ml to set scale
+int scale_weight = 60;//515; // use Aquafina 500ml to set scale
 
 // error threshold
 
@@ -68,6 +68,8 @@ bool adding_products = false; // Check adding product state
 int time_count = 0; // Count to reset offset every time
 
 bool changed = false; // Check quantity and last quantity change state
+bool error_weight_flag[LOADCELL_NUM] = {false}; // Track error state for each loadcell
+uint8_t last_error_code[LOADCELL_NUM] = {0}; // Track last error code for each loadcell
 
 
 /*************** FUNCTION ***************/
@@ -289,6 +291,9 @@ SL_WEAK void app_init(void)
   // Check loadcell pin available
   check_loadcell_pin();
 
+// debug fix loadcell
+//  last_quantity[1] = 255;
+
   GPIO_PinModeSet(BUTTON_PORT, BUTTON_PIN, gpioModeInputPullFilter, 1);
   // check button_0 pressed to config offset and scale
   bool is_pressed = (GPIO_PinInGet(BUTTON_PORT, BUTTON_PIN) == 0);
@@ -316,7 +321,8 @@ SL_WEAK void app_init(void)
 // === Main loop ===
 SL_WEAK void app_process_action(void)
 {
-  bool error_weight_flag = false;
+  bool error_weight_flag[LOADCELL_NUM] = {false};
+  bool changed_index[LOADCELL_NUM] = {false}; // Track which loadcell changed
   char buffer[512];
   time_count++;
 
@@ -337,7 +343,7 @@ SL_WEAK void app_process_action(void)
       if(loadcell_timeout_delay[i] >= loadcell_timeout_delay_threshold){
           last_quantity[i] = 255; // error flag
           changed = true;
-          trigger_gpio_high_nonblocking(500);
+          error_weight_flag[i] = true;
       }
       continue;
     }
@@ -367,12 +373,18 @@ SL_WEAK void app_process_action(void)
     }else{
         if (weight > (verified_quantity[i] * weight_of_one[i] + error_weight)){
             // Invalid ( weight > real weight)
+            uint8_t current_error_code = 200;
+            if (last_error_code[i] != current_error_code) {
+                // Error type changed, reset counter
+                error_weight_delay[i] = 0;
+                last_error_code[i] = current_error_code;
+            }
             error_weight_delay[i]++;
             quantity = last_quantity[i];
             if(error_weight_delay[i] >= error_weight_delay_threshold){
                 printf("Weight %d invalid! (> real weight): %d > %d\n", i+1, weight, verified_quantity[i]*weight_of_one[i]);
                 quantity = 200;
-                error_weight_flag = true;
+                error_weight_flag[i] = true;
             }
         }else{
               if (remainder <= error_weight || remainder >= (weight_of_one[i] - error_weight)){
@@ -381,6 +393,7 @@ SL_WEAK void app_process_action(void)
                     // Valid
                     printf("Weight %d valid!, Weight: %d ,Quantity: %d\n", i+1, weight, quantity);
                     error_weight_delay[i] = 0;
+                    last_error_code[i] = 0; // Reset error code
 
 
 //                  Fix offset feature
@@ -393,12 +406,18 @@ SL_WEAK void app_process_action(void)
 
                 }else{
                     // Invalid (weight outlier)
+                    uint8_t current_error_code = 222;
+                    if (last_error_code[i] != current_error_code) {
+                        // Error type changed, reset counter
+                        error_weight_delay[i] = 0;
+                        last_error_code[i] = current_error_code;
+                    }
                     error_weight_delay[i]++;
                     quantity = last_quantity[i];
                     if(error_weight_delay[i] >= error_weight_delay_threshold){
                         printf("Weight %d invalid! (outlier): %d > %d or %d < %d\n",i+1,remainder,error_weight,remainder,(weight_of_one[i] - error_weight));
                         quantity = 222;
-                        error_weight_flag = true;
+                        error_weight_flag[i] = true;
                     }
                 }
           }
@@ -408,6 +427,7 @@ SL_WEAK void app_process_action(void)
     if (quantity != last_quantity[i]) {
       last_quantity[i] = quantity;
       changed = true;
+      changed_index[i] = true; // Mark this loadcell as changed
     }
 
 //    Debug
@@ -433,11 +453,19 @@ SL_WEAK void app_process_action(void)
   if (changed){
       changed = false;
       if (is_trigger_done()) {
-          if (error_weight_flag){
+          // Check if any loadcell with error has changed its quantity
+          bool error_changed = false;
+          for (int i = 0; i < LOADCELL_NUM; i++) {
+              if (error_weight_flag[i] && changed_index[i]) {
+                  error_changed = true;
+                  break;
+              }
+          }
+          
+          if (error_changed){
               trigger_gpio_high_nonblocking(500);
           }else{
               trigger_gpio_high_nonblocking(100);
-              error_weight_flag = false;
           }
       }
 
