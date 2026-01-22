@@ -292,10 +292,40 @@ def main():
     socketio.run(app, debug=False, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
 
 
+def get_local_ip():
+    """Lấy địa chỉ IP local của thiết bị"""
+    import socket
+    try:
+        # Tạo socket để lấy IP (không thực sự kết nối)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+def print_access_info():
+    """In thông tin truy cập webserver"""
+    local_ip = get_local_ip()
+    print("\n" + "="*60)
+    print("🌐 WEBSERVER STARTED SUCCESSFULLY")
+    print("="*60)
+    print(f"📍 Local IP: {local_ip}")
+    print(f"🌐 Access URLs:")
+    print(f"   - Local:    http://localhost:5000")
+    print(f"   - Network:  http://{local_ip}:5000")
+    print(f"   - WiFi Setup: http://{local_ip}:5000/wifi-setup")
+    print(f"\n💡 Nếu đang dùng hotspot, truy cập: http://192.168.4.1:5000/wifi-setup")
+    print("="*60 + "\n")
+
 def start_webserver():
     # Pass socketio instance to BLE module for connection notifications FIRST
     from app.utils.loadcell_ws_utils import set_socketio_instance
     set_socketio_instance(socketio)
+    
+    # Print access information
+    print_access_info()
     
     # Start BLE loadcell connection only in main process (not Flask reloader)
     main()

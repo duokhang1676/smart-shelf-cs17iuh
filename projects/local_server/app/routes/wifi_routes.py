@@ -26,6 +26,11 @@ def wifi_setup_page():
     """Trang setup WiFi"""
     return render_template('wifi_setup.html')
 
+@wifi_bp.route('/setup')
+def wifi_setup_short():
+    """Shortcut cho WiFi setup"""
+    return render_template('wifi_setup.html')
+
 @wifi_bp.route('/api/wifi/status', methods=['GET'])
 def get_wifi_status():
     """API lấy trạng thái WiFi hiện tại"""
@@ -46,6 +51,14 @@ def get_wifi_status():
 def scan_wifi():
     """API quét các mạng WiFi khả dụng"""
     try:
+        # Kiểm tra hệ thống trước
+        if not wifi_manager.HAS_NMCLI or not wifi_manager.IS_LINUX:
+            return jsonify({
+                'success': False,
+                'error': 'WiFi scanning không khả dụng trên hệ thống này. Chỉ hoạt động trên Linux với NetworkManager.',
+                'tip': 'Cài đặt trên Jetson: sudo apt-get install network-manager'
+            }), 503
+        
         networks = wifi_manager.scan_wifi_networks()
         return jsonify({
             'success': True,

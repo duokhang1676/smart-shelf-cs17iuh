@@ -17,6 +17,8 @@ import subprocess
 import time
 import threading
 import logging
+import sys
+import shutil
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,11 +27,32 @@ HOTSPOT_SSID = "JetsonSmartShelf"
 HOTSPOT_PASSWORD = "smartshelf123"
 CHECK_INTERVAL = 10  # seconds
 
+# Kiểm tra platform và nmcli
+IS_LINUX = sys.platform.startswith('linux')
+HAS_NMCLI = shutil.which('nmcli') is not None
+
 wifi_status = {
     'connected': False,
     'ssid': None,
-    'hotspot_active': False
+    'hotspot_active': False,
+    'error': None
 }
+
+def check_system_requirements():
+    """Kiểm tra xem hệ thống có đủ yêu cầu không"""
+    if not IS_LINUX:
+        logger.warning("WiFi Manager chỉ hoạt động trên Linux. Platform hiện tại: " + sys.platform)
+        wifi_status['error'] = f"Không hỗ trợ platform {sys.platform}. Chỉ hoạt động trên Linux/Jetson Nano."
+        return False
+    
+    if not HAS_NMCLI:
+        logger.error("nmcli không tìm thấy. Vui lòng cài đặt NetworkManager:")
+        logger.error("  sudo apt-get update")
+        logger.error("  sudo apt-get install network-manager")
+        wifi_status['error'] = "nmcli không tìm thấy. Cài đặt: sudo apt-get install network-manager"
+        return False
+    
+    return True
 
 def check_wifi_connection():
     """Kiểm tra xem Jetson có kết nối WiFi không"""
@@ -59,6 +82,10 @@ def check_wifi_connection():
 
 def scan_wifi_networks():
     """Quét các mạng WiFi khả dụng"""
+    if not HAS_NMCLI or not IS_LINUX:
+        logger.error("Cannot scan WiFi: nmcli not available")
+        return []
+    
     try:
         # Rescan WiFi
         subprocess.run(['nmcli', 'dev', 'wifi', 'rescan'], timeout=5)
@@ -91,12 +118,20 @@ def scan_wifi_networks():
         # Sắp xếp theo cường độ tín hiệu
         networks.sort(key=lambda x: x['signal'], reverse=True)
         return networks
+    except FileNotFoundError:
+        logger.error("nmcli command not found. Install NetworkManager: sudo apt-get install network-manager")
+        return []
     except Exception as e:
         logger.error(f"Error scanning WiFi networks: {e}")
         return []
 
 def connect_to_wifi(ssid, password=None):
     """Kết nối tới mạng WiFi"""
+    if not HAS_NMCLI or not IS_LINUX:
+        error_msg = "Cannot connect: nmcli not available. Install NetworkManager on Linux/Jetson Nano."
+        logger.error(error_msg)
+        return False, error_msg
+    
     try:
         logger.info(f"Attempting to connect to WiFi: {ssid}")
         
@@ -125,6 +160,10 @@ def connect_to_wifi(ssid, password=None):
         else:
             logger.error(f"Failed to connect: {result.stderr}")
             return False, result.stderr
+    except FileNotFoundError:
+        error_msg = "nmcli not found. Install: sudo apt-get install network-manager"
+        logger.error(error_msg)
+        return False, error_msg
     except Exception as e:
         logger.error(f"Error connecting to WiFi: {e}")
         return False, str(e)
@@ -187,6 +226,11 @@ def wifi_monitor():
     """Luồng giám sát WiFi - tự động bật hotspot nếu mất kết nối"""
     logger.info("WiFi monitor started")
     
+    # Kiểm tra yêu cầu hệ thống trước
+    if not check_system_requirements():
+        logger.error("WiFi Manager disabled: System requirements not met")
+        return
+    
     # Đợi một chút để các module khác khởi động
     time.sleep(5)
     
@@ -209,9 +253,19 @@ def wifi_monitor():
 def start_wifi_manager():
     """Khởi động WiFi manager"""
     logger.info("Starting WiFi Manager...")
+    
+    # Kiểm tra hệ thống ngay từ đầu
+    if not check_system_requirements():
+        logger.warning("WiFi Manager will not start - running in disabled mode")
+        logger.warning("This is normal if you're running on Windows or without NetworkManager")
+        return
+    
     wifi_monitor()
 
 def get_wifi_status():
     """Lấy trạng thái WiFi hiện tại"""
+    if not HAS_NMCLI or not IS_LINUX:
+        return wifi_status.copy()
+    
     check_wifi_connection()
     return wifi_status.copy()
