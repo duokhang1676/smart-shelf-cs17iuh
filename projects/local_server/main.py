@@ -20,16 +20,20 @@ from app.modules import listen_rfid
 from app.modules import xg26_voice_command
 from app.modules import xg26_sensor
 from app.modules import tracking_customer_behavior
+from app.modules import wifi_manager
 from app.utils.sound_utils import play_sound
 def main():
     threading.Thread(target=play_sound, args=("app/static/sounds/start-program.mp3",)).start()
 
+    # Khởi động WiFi Manager trước để kiểm tra kết nối
+    threading.Thread(target=wifi_manager.start_wifi_manager, daemon=True).start()
+    
     threading.Thread(target=webserver.start_webserver, daemon=True).start()
-    threading.Thread(target=listen_rfid.start_listen_rfid, daemon=True).start()
-    threading.Thread(target=xg26_sensor.start_xg26_sensor, daemon=True).start()
-    threading.Thread(target=update_loadcell_quantity.start_update_loadcell_quantity, daemon=True).start()
-    threading.Thread(target=tracking_customer_behavior.start_tracking_customer_behavior, daemon=True).start()
-    threading.Thread(target=xg26_voice_command.start_xg26_voice_command, daemon=True).start()
+    # threading.Thread(target=listen_rfid.start_listen_rfid, daemon=True).start()
+    # threading.Thread(target=xg26_sensor.start_xg26_sensor, daemon=True).start()
+    # threading.Thread(target=update_loadcell_quantity.start_update_loadcell_quantity, daemon=True).start()
+    # threading.Thread(target=tracking_customer_behavior.start_tracking_customer_behavior, daemon=True).start()
+    # threading.Thread(target=xg26_voice_command.start_xg26_voice_command, daemon=True).start()
 
 if __name__ == '__main__':
     main()

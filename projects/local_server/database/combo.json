@@ -1,45 +1,30 @@
 [
     {
-        "id": "68c171ced06c99e93e014190",
-        "name": "COMBO4",
-        "desc": "",
-        "img": "http://ducdatphat.id.vn:3000/uploads/image-1757508045969.jpg",
-        "price": 2000,
-        "oldPrice": 30000,
-        "validFrom": "2025-09-09T17:00:00.000Z",
-        "validTo": "2025-09-29T17:00:00.000Z",
+        "id": "68c3cc761c3e303035a8d7f2",
+        "name": "Bữa xế năng lượng",
+        "desc": "Bữa xế bổ sung năng lượng. Bán chạy nhất CS17IUH ",
+        "img": "http://ducdatphat.id.vn:3000/uploads/image-1757662326487.jpg",
+        "price": 10000,
+        "oldPrice": 15000,
+        "validFrom": "2025-09-10T17:00:00.000Z",
+        "validTo": "2025-10-30T17:00:00.000Z",
         "products": [
             "68790f04d07799278cee152c",
-            "68790f04d07799278cee152d"
-        ]
-    },
-    {
-        "id": "68c171afd06c99e93e014189",
-        "name": "COMBO3",
-        "desc": "COMBO 3",
-        "img": "http://ducdatphat.id.vn:3000/uploads/image-1757508014039.png",
-        "price": 15000,
-        "oldPrice": 2000,
-        "validFrom": "2025-09-09T17:00:00.000Z",
-        "validTo": "2025-09-29T17:00:00.000Z",
-        "products": [
-            "68790f04d07799278cee152f",
-            "68790f04d07799278cee1530"
+            "68c3c9c41c3e303035a8d656"
         ]
     },
     {
         "id": "68c17189d06c99e93e014182",
-        "name": "COMBO2",
-        "desc": "2",
+        "name": "Combo siêu ngon miệng",
+        "desc": "Combo này ăn vào ngon miệng lắm mọi người, đề xuất nên mua.",
         "img": "http://ducdatphat.id.vn:3000/uploads/image-1757507976386.png",
         "price": 20000,
-        "oldPrice": 30000,
+        "oldPrice": 25000,
         "validFrom": "2025-09-09T17:00:00.000Z",
         "validTo": "2025-09-29T17:00:00.000Z",
         "products": [
-            "68790f04d07799278cee152f",
-            "68790f04d07799278cee1530",
-            "68790f04d07799278cee152d"
+            "68790f04d07799278cee152d",
+            "68c3c9181c3e303035a8d63f"
         ]
     }
 ]

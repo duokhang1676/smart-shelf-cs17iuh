@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Setup - Smart Shelf</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/wifi_setup.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛜 WiFi Setup</h1>
+            <p class="subtitle">Cấu hình kết nối WiFi cho Smart Shelf</p>
+        </div>
+
+        <!-- Trạng thái hiện tại -->
+        <div class="status-card">
+            <h2>Trạng thái kết nối</h2>
+            <div id="currentStatus">
+                <div class="loading">Đang kiểm tra...</div>
+            </div>
+        </div>
+
+        <!-- Thông tin Hotspot -->
+        <div class="hotspot-info" id="hotspotInfo" style="display: none;">
+            <h3>📡 Thông tin Hotspot</h3>
+            <p><strong>SSID:</strong> <span id="hotspotSSID"></span></p>
+            <p><strong>Password:</strong> <span id="hotspotPassword"></span></p>
+            <p class="note">Kết nối thiết bị của bạn với hotspot này để cấu hình WiFi</p>
+        </div>
+
+        <!-- Danh sách WiFi -->
+        <div class="wifi-list-card">
+            <div class="wifi-header">
+                <h2>Mạng WiFi khả dụng</h2>
+                <button id="scanBtn" class="scan-btn">🔄 Quét lại</button>
+            </div>
+            
+            <div id="wifiList">
+                <div class="loading">Đang quét mạng WiFi...</div>
+            </div>
+        </div>
+
+        <!-- Modal kết nối WiFi -->
+        <div id="connectModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Kết nối WiFi</h2>
+                <div class="form-group">
+                    <label>SSID:</label>
+                    <input type="text" id="modalSSID" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu:</label>
+                    <input type="password" id="modalPassword" placeholder="Nhập mật khẩu WiFi">
+                    <button type="button" id="togglePassword" class="toggle-password">👁️</button>
+                </div>
+                <div class="form-group">
+                    <p class="security-info" id="securityInfo"></p>
+                </div>
+                <div class="modal-actions">
+                    <button id="connectBtn" class="connect-btn">Kết nối</button>
+                    <button id="cancelBtn" class="cancel-btn">Hủy</button>
+                </div>
+                <div id="connectStatus" class="connect-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/wifi_setup.js') }}"></script>
+</body>
+</html>

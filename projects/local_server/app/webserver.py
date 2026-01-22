@@ -34,6 +34,7 @@ from app.routes.api_routes import api_bp
 from app.routes.payment_routes import payment_bp
 from app.routes.loadcell_routes import loadcell_bp
 from app.routes.debug_routes import debug_bp
+from app.routes.wifi_routes import wifi_bp
 from app.routes.websocket_routes import register_websocket_handlers
 
 # Import utilities and modules
@@ -119,6 +120,7 @@ app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(payment_bp)
 app.register_blueprint(loadcell_bp, url_prefix='/api')
 app.register_blueprint(debug_bp, url_prefix='/api')
+app.register_blueprint(wifi_bp)
 
 def get_cart():
     """Helper function to get cart from app context"""
