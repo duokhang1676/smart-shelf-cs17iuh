@@ -4,6 +4,12 @@ The **Smart Vending Shelf** system enables real-time inventory tracking, detects
 
 ---
 
+## Demo Video
+
+🎥 [Watch the full demo video here](https://vlylm-my.sharepoint.com/:v:/g/personal/foxiary_vlylm_onmicrosoft_com/IQDMOHBvWFmYQZ5VyPdB_Z2_Ad5Sep8zGlACfSiJdUPBNfI?e=SdHGfG)
+
+---
+
 ## How to use the template
 
 * Create your software projects under the `projects/` folder.
