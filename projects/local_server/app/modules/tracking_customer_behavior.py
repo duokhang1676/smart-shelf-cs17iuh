@@ -21,17 +21,14 @@ import time
 import os
 import threading
 from app.utils.sound_utils import play_sound
-from app.modules.tracker.sort import Sort
 from app.modules.cloud_sync import post_order_data_to_cloud
 
 def start_tracking_customer_behavior():
-    customer_id = None  
-    tracker = Sort(max_age=100, iou_threshold=0.10, min_hits = 5)
     customer_frame = None
     sound_file_path_1 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/camera-connected.mp3"))
     sound_file_path_2 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/init-model-success.mp3"))
     sound_file_path_3 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/unpaid_warning.mp3"))
-    sound_file_path_4 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/warning.mp3"))
+    sound_file_path_4 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/warning-2.mp3"))
     frame_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame/frame.jpg"))
     frame_box_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame/frame_box.jpg"))
     frame_crop_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame"))
@@ -50,16 +47,17 @@ def start_tracking_customer_behavior():
     model_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/modules/detector/models/yolo11n-person-416-ver2.engine"))
     model = YOLO(model_file_path)
     model.overrides['verbose'] = False
-    gst_pipeline = (
-            "nvarguscamerasrc ! "
-            "video/x-raw(memory:NVMM), width=416, height=416, framerate=30/1 ! "
-            "nvvidconv ! "
-            "video/x-raw, format=BGRx ! "
-            "videoconvert ! "
-            "video/x-raw, format=BGR ! appsink"
-        )
-    cap = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
+    # gst_pipeline = (
+    #         "nvarguscamerasrc ! "
+    #         "video/x-raw(memory:NVMM), width=416, height=416, framerate=30/1 ! "
+    #         "nvvidconv ! "
+    #         "video/x-raw, format=BGRx ! "
+    #         "videoconvert ! "
+    #         "video/x-raw, format=BGR ! appsink"
+    #     )
+    # cap = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
     ########################################################
+    cap = cv2.VideoCapture("/dev/video0")  # for Jetson Nano with USB camera
     if not cap.isOpened():
         print("Error: Could not open camera.")
         exit()
@@ -75,7 +73,6 @@ def start_tracking_customer_behavior():
     while True:
         if not globals.get_is_tracking():
             # temporary
-            customer_id = None
             alert = 0
             customer_frame = None
 
@@ -92,8 +89,7 @@ def start_tracking_customer_behavior():
     
         results = model(frame)
 
-        person_detected = False  
-        detections = []
+        person_detected = False
 
         for result in results:
             boxes = result.boxes
@@ -102,45 +98,35 @@ def start_tracking_customer_behavior():
                 conf = float(box.conf[0])
                 if conf > 0.5 and cls == 0:  
                     x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-                    detections.append([x1, y1, x2, y2, conf])
+                    cx = (x1 + x2) / 2
+                    cy = (y1 + y2) / 2
 
-        # update tracker
-        if len(detections) == 0:
-            detections = np.empty((0, 4))
+                    # Check if person is in ROI
+                    if roi_x1 <= cx <= roi_x2 and roi_y1 <= cy <= roi_y2:
+                        person_detected = True
+                        alert = 0
+                        print(f"[IN ROI] Person detected at ({int(cx)}, {int(cy)})")
 
-        tracked_objects = tracker.update(np.array(detections))
+                        if customer_frame is None:
+                            customer_frame = frame.copy()
+                            customer_frame_box = frame.copy()
 
-        for x1, y1, x2, y2, obj_id in tracked_objects:
-            cx = (x1 + x2) / 2
-            cy = (y1 + y2) / 2
+                            label = "Customer"
+                            x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
+                            cv2.rectangle(customer_frame_box, (x1, y1), (x2, y2), (0, 255, 0), 2)              
+                            cv2.putText(customer_frame_box, label, (x1, y1 - 10),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-            if customer_id is None:
-                customer_id = int(obj_id)
-                print(f"Assigned customer_id = {customer_id}")
-
-            if int(obj_id) == customer_id:
-                if roi_x1 <= cx <= roi_x2 and roi_y1 <= cy <= roi_y2:
-                    person_detected = True
-                    alert = 0
-                    print(f"[IN ROI] Customer {customer_id}")
-
-                    if customer_frame is None:
-                        customer_frame = frame.copy()
-                        customer_frame_box = frame.copy()
-
-                        label = str("Customer " + str(customer_id))
-                        x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
-                        cv2.rectangle(customer_frame_box, (x1, y1), (x2, y2), (0, 255, 0), 2)              
-                        cv2.putText(customer_frame_box, label, (x1, y1 - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-                        obj = customer_frame_box[y1:y2, x1:x2]
-                        cv2.imwrite(f"{frame_crop_file_path}/Customer.jpg", obj)
-                        cv2.imwrite(frame_file_path, customer_frame)
-                        cv2.imwrite(frame_box_file_path, customer_frame_box)
-
-                else:
-                    print(f"[OUTSIDE ROI] Customer {customer_id}")
+                            obj = customer_frame_box[y1:y2, x1:x2]
+                            cv2.imwrite(f"{frame_crop_file_path}/Customer.jpg", obj)
+                            cv2.imwrite(frame_file_path, customer_frame)
+                            cv2.imwrite(frame_box_file_path, customer_frame_box)
+                        break  # Only process first person in ROI
+                    else:
+                        print(f"[OUTSIDE ROI] Person detected at ({int(cx)}, {int(cy)})")
+            
+            if person_detected:
+                break  # Exit outer loop if person already detected
 
 
         if not person_detected:
@@ -181,7 +167,6 @@ def start_tracking_customer_behavior():
                 }     
                 post_order_data_to_cloud(order_data)
 
-                customer_id = None
                 alert = 0
                 customer_frame = None
   
