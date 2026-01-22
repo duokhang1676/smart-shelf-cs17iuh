@@ -490,7 +490,18 @@ def set_unpaid_customer_warning(new_warning):
 
 
 
-# Load data from cloud 
-load_rfids_from_cloud()
-load_posters_from_cloud()
-load_combo_from_cloud()
+# Load data from cloud (non-blocking, falls back to local data)
+try:
+    load_rfids_from_cloud()
+except Exception as e:
+    print(f"Could not load RFIDs from cloud: {e}. Using local data.")
+
+try:
+    load_posters_from_cloud()
+except Exception as e:
+    print(f"Could not load posters from cloud: {e}. Using local data.")
+
+try:
+    load_combo_from_cloud()
+except Exception as e:
+    print(f"Could not load combos from cloud: {e}. Using local data.")

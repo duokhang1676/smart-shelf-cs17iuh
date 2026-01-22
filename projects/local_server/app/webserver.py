@@ -316,7 +316,9 @@ def print_access_info():
     print(f"   - Local:    http://localhost:5000")
     print(f"   - Network:  http://{local_ip}:5000")
     print(f"   - WiFi Setup: http://{local_ip}:5000/wifi-setup")
-    print(f"\n💡 Nếu đang dùng hotspot, truy cập: http://192.168.4.1:5000/wifi-setup")
+    print(f"\n💡 Nếu đang dùng hotspot, thử:")
+    print(f"   - http://10.42.0.1:5000/wifi-setup")
+    print(f"   - http://192.168.4.1:5000/wifi-setup")
     print("="*60 + "\n")
 
 def start_webserver():
