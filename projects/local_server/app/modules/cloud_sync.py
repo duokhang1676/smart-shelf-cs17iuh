@@ -33,22 +33,22 @@ def load_products_from_cloud():
             data = response.json()["products"]
 
             prefix = "http://ducdatphat.id.vn:3000"
-        for product in data:
-            img_url = product.get("img_url", "")
-            if img_url and not img_url.startswith("http"):
-                product["img_url"] = str(prefix + img_url)
+            for product in data:
+                img_url = product.get("img_url", "")
+                if img_url and not img_url.startswith("http"):
+                    product["img_url"] = str(prefix + img_url)
 
-        json_path = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'products.json')
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        print("Data written to products.json")
-        globals.set_products_data(data)
-        globals.set_products_weight(globals.load_weight_of_one(data))
-        globals.set_products_price(globals.load_products_price(data))
-        globals.set_products_name(globals.load_products_name(data))
-        products_name_decimal, products_name_char_count = globals.load_products_name_decimal(globals.get_products_name())
-        globals.set_products_name_char_count(products_name_char_count)
-        globals.set_products_name_decimal(products_name_decimal)
+            json_path = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'products.json')
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            print("Data written to products.json")
+            globals.set_products_data(data)
+            globals.set_products_weight(globals.load_weight_of_one(data))
+            globals.set_products_price(globals.load_products_price(data))
+            globals.set_products_name(globals.load_products_name(data))
+            products_name_decimal, products_name_char_count = globals.load_products_name_decimal(globals.get_products_name())
+            globals.set_products_name_char_count(products_name_char_count)
+            globals.set_products_name_decimal(products_name_decimal)
         else:
             print(f"Failed to retrieve products: {response.status_code}")
     except requests.exceptions.RequestException as e:
