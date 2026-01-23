@@ -48,6 +48,9 @@ is_scanning = False  # Flag để tránh race condition với wifi_monitor
 is_connecting = False  # Flag khi đang kết nối WiFi
 stop_wifi_monitor = False  # Flag để dừng wifi_monitor khi đã connected
 
+# Event để báo hiệu khi WiFi đã kết nối (dùng để sync với main thread)
+wifi_ready_event = threading.Event()
+
 def check_system_requirements():
     """Kiểm tra xem hệ thống có đủ yêu cầu không"""
     if not IS_LINUX:
@@ -67,21 +70,28 @@ def check_system_requirements():
 def check_wifi_connection():
     """Kiểm tra xem Jetson có kết nối WiFi không"""
     try:
-        # Kiểm tra trạng thái kết nối
-        result = subprocess.run(['nmcli', '-t', '-f', 'GENERAL.STATE', 'general'],
+        # Kiểm tra kết nối WiFi qua device status
+        result = subprocess.run(['nmcli', '-t', '-f', 'DEVICE,TYPE,STATE,CONNECTION', 'dev'],
                               capture_output=True, text=True, timeout=5)
         
-        if result.returncode == 0 and 'connected' in result.stdout:
-            # Lấy thông tin SSID hiện tại
-            ssid_result = subprocess.run(['nmcli', '-t', '-f', 'active,ssid', 'dev', 'wifi'],
-                                        capture_output=True, text=True, timeout=5)
-            
-            for line in ssid_result.stdout.split('\n'):
-                if line.startswith('yes:'):
-                    ssid = line.split(':', 1)[1]
-                    wifi_status['connected'] = True
-                    wifi_status['ssid'] = ssid
-                    return True
+        if result.returncode == 0:
+            for line in result.stdout.split('\n'):
+                parts = line.split(':')
+                if len(parts) >= 4:
+                    device, dev_type, state, connection = parts[0], parts[1], parts[2], parts[3]
+                    # Kiểm tra xem có WiFi device nào đang connected không (và không phải hotspot)
+                    if dev_type == 'wifi' and state == 'connected' and connection and 'Hotspot' not in connection:
+                        # Lấy SSID
+                        ssid_result = subprocess.run(['nmcli', '-t', '-f', 'active,ssid', 'dev', 'wifi'],
+                                                    capture_output=True, text=True, timeout=5)
+                        
+                        for ssid_line in ssid_result.stdout.split('\n'):
+                            if ssid_line.startswith('yes:'):
+                                ssid = ssid_line.split(':', 1)[1]
+                                wifi_status['connected'] = True
+                                wifi_status['ssid'] = ssid
+                                logger.debug(f"WiFi connected to: {ssid}")
+                                return True
         
         wifi_status['connected'] = False
         wifi_status['ssid'] = None
@@ -270,6 +280,9 @@ def connect_to_wifi(ssid, password=None):
             stop_wifi_monitor = True
             logger.info("WiFi monitor will be stopped")
             
+            # Báo hiệu rằng WiFi đã sẵn sàng
+            wifi_ready_event.set()
+            
             return True, "Connected successfully"
         else:
             error_msg = result.stderr.strip()
@@ -436,6 +449,8 @@ def wifi_monitor():
     if check_wifi_connection():
         logger.info(f"Already connected to WiFi: {wifi_status['ssid']}")
         logger.info("WiFi monitor will run in background to maintain connection")
+        # Báo hiệu rằng WiFi đã sẵn sàng
+        wifi_ready_event.set()
         # Nếu đã kết nối, không cần bật hotspot
     
     while True:
@@ -491,6 +506,29 @@ def start_wifi_manager():
         return
     
     wifi_monitor()
+
+def wait_for_wifi(timeout=None):
+    """Chờ đợi cho đến khi WiFi kết nối thành công
+    
+    Args:
+        timeout: Thời gian chờ tối đa (seconds). None = chờ vô thời hạn
+    
+    Returns:
+        True nếu WiFi đã connected, False nếu timeout hoặc không hỗ trợ
+    """
+    if not HAS_NMCLI or not IS_LINUX:
+        logger.warning("WiFi Manager không hỗ trợ trên platform này")
+        return True  # Cho phép tiếp tục nếu không hỗ trợ
+    
+    logger.info("Waiting for WiFi connection...")
+    result = wifi_ready_event.wait(timeout=timeout)
+    
+    if result:
+        logger.info("WiFi connection confirmed!")
+    else:
+        logger.warning(f"WiFi connection timeout after {timeout} seconds")
+    
+    return result
 
 def get_wifi_status():
     """Lấy trạng thái WiFi hiện tại"""

@@ -28,13 +28,21 @@ def main():
     # Khởi động WiFi Manager trước để kiểm tra kết nối
     threading.Thread(target=wifi_manager.start_wifi_manager, daemon=True).start()
     
-    threading.Thread(target=webserver.start_webserver, daemon=True).start()
+    # Đợi cho WiFi kết nối (timeout 60s để tránh đợi vô thời hạn)
+    print("Waiting for WiFi connection...")
+    wifi_connected = wifi_manager.wait_for_wifi(timeout=60)
+    
+    if wifi_connected:
+        print("WiFi connected! Starting other services...")
+        threading.Thread(target=webserver.start_webserver, daemon=True).start()
     # threading.Thread(target=listen_rfid.start_listen_rfid, daemon=True).start()
     # threading.Thread(target=xg26_sensor.start_xg26_sensor, daemon=True).start()
     # threading.Thread(target=update_loadcell_quantity.start_update_loadcell_quantity, daemon=True).start()
     # threading.Thread(target=tracking_customer_behavior.start_tracking_customer_behavior, daemon=True).start()
     # threading.Thread(target=xg26_voice_command.start_xg26_voice_command, daemon=True).start()
 
+    else:
+        print("WiFi connection timeout - continuing anyway (may use hotspot mode)")
 if __name__ == '__main__':
     main()
     while True:
