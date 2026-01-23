@@ -30,7 +30,7 @@ def main():
     
     # Đợi cho WiFi kết nối (timeout 60s để tránh đợi vô thời hạn)
     print("Waiting for WiFi connection...")
-    wifi_connected = wifi_manager.wait_for_wifi(timeout=60)
+    wifi_connected = wifi_manager.wait_for_wifi(timeout=None)
     
     if wifi_connected:
         print("WiFi connected! Starting other services...")

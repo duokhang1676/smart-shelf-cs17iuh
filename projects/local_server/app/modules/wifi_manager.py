@@ -25,8 +25,8 @@ from app.utils.sound_utils import play_sound
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-HOTSPOT_SSID = "JetsonSmartShelf"
-HOTSPOT_PASSWORD = "smartshelf123"
+HOTSPOT_SSID = "SmartShelf-CS17IUH"
+HOTSPOT_PASSWORD = "00001111"
 CHECK_INTERVAL = 15  # seconds - Tăng lên để tránh check quá nhanh
 
 # Kiểm tra platform và nmcli
