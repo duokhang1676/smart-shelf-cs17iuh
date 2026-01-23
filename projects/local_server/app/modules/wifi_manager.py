@@ -102,13 +102,8 @@ def scan_wifi_networks():
         return last_scan_results
     
     try:
-        # Thử rescan, nhưng không fail nếu bị từ chối
-        try:
-            subprocess.run(['nmcli', 'dev', 'wifi', 'rescan'], 
-                          capture_output=True, timeout=5, check=False)
-            time.sleep(1)
-        except Exception as e:
-            logger.warning(f"Rescan failed (will use existing data): {e}")
+        # KHÔNG gọi rescan để tránh lỗi "scanning not allowed"
+        # NetworkManager tự động scan định kỳ, chỉ cần lấy kết quả từ cache
         
         # Lấy danh sách WiFi từ cache của NetworkManager
         result = subprocess.run(['nmcli', '-t', '-f', 'SSID,SIGNAL,SECURITY', 'dev', 'wifi', 'list'],
@@ -141,6 +136,7 @@ def scan_wifi_networks():
         last_scan_time = current_time
         last_scan_results = networks
         
+        logger.info(f"Found {len(networks)} WiFi networks")
         return networks
     except FileNotFoundError:
         logger.error("nmcli command not found. Install NetworkManager: sudo apt-get install network-manager")
