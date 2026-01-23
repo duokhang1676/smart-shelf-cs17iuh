@@ -38,6 +38,11 @@ wifi_status = {
     'error': None
 }
 
+# Cache cho kết quả scan WiFi
+last_scan_time = 0
+last_scan_results = []
+SCAN_COOLDOWN = 10  # giây - thời gian tối thiểu giữa các lần scan
+
 def check_system_requirements():
     """Kiểm tra xem hệ thống có đủ yêu cầu không"""
     if not IS_LINUX:
@@ -82,16 +87,30 @@ def check_wifi_connection():
 
 def scan_wifi_networks():
     """Quét các mạng WiFi khả dụng"""
+    global last_scan_time, last_scan_results
+    
     if not HAS_NMCLI or not IS_LINUX:
         logger.error("Cannot scan WiFi: nmcli not available")
         return []
     
+    # Kiểm tra xem có quá sớm để scan lại không
+    current_time = time.time()
+    time_since_last_scan = current_time - last_scan_time
+    
+    if time_since_last_scan < SCAN_COOLDOWN and last_scan_results:
+        logger.info(f"Using cached WiFi scan results (scanned {int(time_since_last_scan)}s ago)")
+        return last_scan_results
+    
     try:
-        # Rescan WiFi
-        subprocess.run(['nmcli', 'dev', 'wifi', 'rescan'], timeout=5)
-        time.sleep(2)
+        # Thử rescan, nhưng không fail nếu bị từ chối
+        try:
+            subprocess.run(['nmcli', 'dev', 'wifi', 'rescan'], 
+                          capture_output=True, timeout=5, check=False)
+            time.sleep(1)
+        except Exception as e:
+            logger.warning(f"Rescan failed (will use existing data): {e}")
         
-        # Lấy danh sách WiFi
+        # Lấy danh sách WiFi từ cache của NetworkManager
         result = subprocess.run(['nmcli', '-t', '-f', 'SSID,SIGNAL,SECURITY', 'dev', 'wifi', 'list'],
                               capture_output=True, text=True, timeout=10)
         
@@ -117,6 +136,11 @@ def scan_wifi_networks():
         
         # Sắp xếp theo cường độ tín hiệu
         networks.sort(key=lambda x: x['signal'], reverse=True)
+        
+        # Cập nhật cache
+        last_scan_time = current_time
+        last_scan_results = networks
+        
         return networks
     except FileNotFoundError:
         logger.error("nmcli command not found. Install NetworkManager: sudo apt-get install network-manager")
