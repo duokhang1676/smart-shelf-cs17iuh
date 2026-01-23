@@ -263,6 +263,12 @@ def connect_to_wifi(ssid, password=None):
                 time.sleep(2)
             
             logger.info("Connection established and stable")
+            
+            # Dừng wifi_monitor vì đã kết nối thành công
+            global stop_wifi_monitor
+            stop_wifi_monitor = True
+            logger.info("WiFi monitor will be stopped")
+            
             return True, "Connected successfully"
         else:
             error_msg = result.stderr.strip()
@@ -413,6 +419,7 @@ def stop_hotspot():
 
 def wifi_monitor():
     """Luồng giám sát WiFi - tự động bật hotspot nếu mất kết nối"""
+    global is_scanning, is_connecting, stop_wifi_monitor
     logger.info("WiFi monitor started")
     
     # Kiểm tra yêu cầu hệ thống trước
@@ -425,6 +432,11 @@ def wifi_monitor():
     
     while True:
         try:
+            # Kiểm tra nếu được yêu cầu dừng
+            if stop_wifi_monitor:
+                logger.info("WiFi monitor stopped: WiFi connected successfully")
+                break
+            
             # Bỏ qua nếu đang scan WiFi hoặc đang kết nối
             if is_scanning:
                 logger.debug("Skipping wifi_monitor: is_scanning=True")
