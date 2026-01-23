@@ -43,6 +43,7 @@ last_scan_time = 0
 last_scan_results = []
 SCAN_COOLDOWN = 10  # giây - thời gian tối thiểu giữa các lần scan
 is_scanning = False  # Flag để tránh race condition với wifi_monitor
+is_connecting = False  # Flag khi đang kết nối WiFi
 
 def check_system_requirements():
     """Kiểm tra xem hệ thống có đủ yêu cầu không"""
@@ -192,10 +193,15 @@ def scan_wifi_networks():
 
 def connect_to_wifi(ssid, password=None):
     """Kết nối tới mạng WiFi"""
+    global is_connecting
+    
     if not HAS_NMCLI or not IS_LINUX:
         error_msg = "Cannot connect: nmcli not available. Install NetworkManager on Linux/Jetson Nano."
         logger.error(error_msg)
         return False, error_msg
+    
+    # Đánh dấu đang kết nối để wifi_monitor không can thiệp
+    is_connecting = True
     
     try:
         logger.info(f"Attempting to connect to WiFi: {ssid}")
@@ -232,6 +238,14 @@ def connect_to_wifi(ssid, password=None):
             wifi_status['connected'] = True
             wifi_status['ssid'] = ssid
             wifi_status['hotspot_active'] = False
+            
+            # Đợi kết nối ổn định
+            logger.info("Waiting for connection to stabilize...")
+            time.sleep(5)
+            
+            # Verify connection
+            check_wifi_connection()
+            
             return True, "Connected successfully"
         else:
             error_msg = result.stderr.strip()
@@ -265,6 +279,14 @@ def connect_to_wifi(ssid, password=None):
                                 wifi_status['connected'] = True
                                 wifi_status['ssid'] = ssid
                                 wifi_status['hotspot_active'] = False
+                                
+                                # Đợi kết nối ổn định
+                                logger.info("Waiting for connection to stabilize...")
+                                time.sleep(5)
+                                
+                                # Verify connection
+                                check_wifi_connection()
+                                
                                 return True, "Connected successfully"
                             break
             
@@ -276,6 +298,9 @@ def connect_to_wifi(ssid, password=None):
     except Exception as e:
         logger.error(f"Error connecting to WiFi: {e}")
         return False, str(e)
+    finally:
+        # Luôn reset flag khi hoàn thành
+        is_connecting = False
 
 def start_hotspot():
     """Khởi động hotspot WiFi"""
@@ -370,8 +395,8 @@ def wifi_monitor():
     
     while True:
         try:
-            # Bỏ qua nếu đang scan WiFi
-            if is_scanning:
+            # Bỏ qua nếu đang scan WiFi hoặc đang kết nối
+            if is_scanning or is_connecting:
                 time.sleep(2)
                 continue
             
