@@ -102,12 +102,28 @@ def scan_wifi_networks():
         return last_scan_results
     
     try:
-        # Nếu hotspot đang bật, tạm thời tắt để scan WiFi
-        hotspot_was_active = wifi_status['hotspot_active']
+        # Kiểm tra xem wlan0 có đang ở chế độ AP không
+        device_result = subprocess.run(
+            ['nmcli', '-t', '-f', 'DEVICE,TYPE,STATE', 'dev'],
+            capture_output=True, text=True, timeout=5
+        )
+        
+        hotspot_was_active = False
+        for line in device_result.stdout.split('\n'):
+            if 'wlan0' in line and 'wifi' in line:
+                # Kiểm tra xem có connection nào đang active trên wlan0 không
+                active_check = subprocess.run(
+                    ['nmcli', '-t', '-f', 'NAME,DEVICE', 'connection', 'show', '--active'],
+                    capture_output=True, text=True, timeout=5
+                )
+                if 'wlan0' in active_check.stdout:
+                    hotspot_was_active = True
+                    break
+        
         if hotspot_was_active:
             logger.info("Temporarily stopping hotspot to scan WiFi networks...")
             stop_hotspot()
-            time.sleep(2)  # Đợi interface chuyển chế độ
+            time.sleep(3)  # Đợi interface chuyển chế độ
         
         # Force rescan để lấy danh sách mới nhất
         try:
@@ -250,18 +266,43 @@ def stop_hotspot():
     try:
         logger.info("Stopping WiFi hotspot...")
         
-        result = subprocess.run(['nmcli', 'connection', 'down', HOTSPOT_SSID],
-                              capture_output=True, text=True, timeout=10)
+        # Tìm tất cả các connection đang active trên wlan0
+        active_result = subprocess.run(
+            ['nmcli', '-t', '-f', 'NAME,DEVICE', 'connection', 'show', '--active'],
+            capture_output=True, text=True, timeout=5
+        )
         
-        if result.returncode == 0:
+        hotspot_stopped = False
+        
+        # Tắt tất cả connection trên wlan0
+        for line in active_result.stdout.split('\n'):
+            if 'wlan0' in line:
+                conn_name = line.split(':')[0]
+                logger.info(f"Stopping connection: {conn_name}")
+                result = subprocess.run(['nmcli', 'connection', 'down', conn_name],
+                                      capture_output=True, text=True, timeout=5)
+                if result.returncode == 0:
+                    hotspot_stopped = True
+        
+        # Nếu không tìm thấy connection nào, thử tắt theo tên
+        if not hotspot_stopped:
+            result = subprocess.run(['nmcli', 'connection', 'down', HOTSPOT_SSID],
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                hotspot_stopped = True
+        
+        if hotspot_stopped:
             logger.info("Hotspot stopped")
             wifi_status['hotspot_active'] = False
             return True
         else:
-            logger.warning(f"Failed to stop hotspot: {result.stderr}")
-            return False
+            # Không coi đây là lỗi nếu không có hotspot đang chạy
+            logger.info("No active hotspot to stop")
+            wifi_status['hotspot_active'] = False
+            return True
     except Exception as e:
         logger.error(f"Error stopping hotspot: {e}")
+        wifi_status['hotspot_active'] = False
         return False
 
 def wifi_monitor():
