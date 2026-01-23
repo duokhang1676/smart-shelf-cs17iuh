@@ -428,8 +428,15 @@ def wifi_monitor():
         logger.error("WiFi Manager disabled: System requirements not met")
         return
     
-    # Đợi một chút để các module khác khởi động
-    time.sleep(5)
+    # Đợi một chút để các module khác khởi động và kiểm tra kết nối hiện tại
+    logger.info("Checking current WiFi connection status...")
+    time.sleep(3)
+    
+    # Kiểm tra ngay xem đã có WiFi chưa
+    if check_wifi_connection():
+        logger.info(f"Already connected to WiFi: {wifi_status['ssid']}")
+        logger.info("WiFi monitor will run in background to maintain connection")
+        # Nếu đã kết nối, không cần bật hotspot
     
     while True:
         try:
@@ -453,6 +460,16 @@ def wifi_monitor():
             
             if not connected and not wifi_status['hotspot_active']:
                 logger.warning("No WiFi connection detected. Starting hotspot...")
+                # Phát âm thanh cảnh báo không có WiFi
+                try:
+                    threading.Thread(
+                        target=play_sound, 
+                        args=("app/static/sounds/wifi_connection_error.mp3",), 
+                        daemon=True
+                    ).start()
+                    logger.info("Playing WiFi connection error sound")
+                except Exception as e:
+                    logger.warning(f"Could not play error sound: {e}")
                 start_hotspot()
             elif connected and wifi_status['hotspot_active']:
                 logger.info("WiFi connected. Stopping hotspot...")
