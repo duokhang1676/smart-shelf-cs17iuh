@@ -19,6 +19,8 @@ import threading
 import logging
 import sys
 import shutil
+import os
+from app.utils.sound_utils import play_sound
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -241,6 +243,14 @@ def connect_to_wifi(ssid, password=None):
             wifi_status['ssid'] = ssid
             wifi_status['hotspot_active'] = False
             
+            # Phát âm thanh thành công
+            try:
+                sound_path = "app/static/sounds/wifi_connection_success.mp3"
+                threading.Thread(target=play_sound, args=(sound_path,), daemon=True).start()
+                logger.info("Playing WiFi connection success sound")
+            except Exception as e:
+                logger.warning(f"Could not play success sound: {e}")
+            
             # Đợi kết nối ổn định - tăng thời gian
             logger.info("Waiting for connection to stabilize...")
             time.sleep(10)  # Tăng từ 5s lên 10s
@@ -286,6 +296,14 @@ def connect_to_wifi(ssid, password=None):
                                 wifi_status['connected'] = True
                                 wifi_status['ssid'] = ssid
                                 wifi_status['hotspot_active'] = False
+                                
+                                # Phát âm thanh thành công
+                                try:
+                                    sound_path = "app/static/sounds/wifi_connection_success.mp3"
+                                    threading.Thread(target=play_sound, args=(sound_path,), daemon=True).start()
+                                    logger.info("Playing WiFi connection success sound")
+                                except Exception as e:
+                                    logger.warning(f"Could not play success sound: {e}")
                                 
                                 # Đợi kết nối ổn định - tăng thời gian
                                 logger.info("Waiting for connection to stabilize...")
