@@ -137,8 +137,10 @@ def debug_current_state():
 def sepay_status():
     """Check SEPAY token status"""
     
-    token = os.getenv("SEPAY_AUTH_TOKEN")
-    bank_account_id = os.getenv("SEPAY_BANK_ACCOUNT_ID")
+    # Load from globals
+    sepay_config = globals.sepay_info
+    token = sepay_config.get("SEPAY_AUTH_TOKEN", "")
+    bank_account_id = sepay_config.get("SEPAY_BANK_ACCOUNT_ID", "")
     url = os.getenv("SEPAY_TRANSACTION_URL")
     
     if not token:
@@ -191,8 +193,10 @@ def sepay_status():
 def test_payment_match(order_id):
     """Test payment matching logic"""
     
-    token = os.getenv("SEPAY_AUTH_TOKEN")
-    bank_account_id = os.getenv("SEPAY_BANK_ACCOUNT_ID")
+    # Load from globals
+    sepay_config = globals.sepay_info
+    token = sepay_config.get("SEPAY_AUTH_TOKEN", "")
+    bank_account_id = sepay_config.get("SEPAY_BANK_ACCOUNT_ID", "")
     url = os.getenv("SEPAY_TRANSACTION_URL")
     
     if not token:
@@ -300,7 +304,9 @@ def test_payment_match(order_id):
 def check_recent_payments():
     """Check 5 recent transactions for order IDs"""
     
-    token = os.getenv("SEPAY_AUTH_TOKEN")
+    # Load from globals
+    sepay_config = globals.sepay_info
+    token = sepay_config.get("SEPAY_AUTH_TOKEN", "")
     url = os.getenv("SEPAY_TRANSACTION_URL")
     
     if not token:
@@ -416,7 +422,9 @@ def trigger_payment_success(order_id):
 def auto_check_and_trigger_payment():
     """Auto-trigger payment for found orders"""
     
-    token = os.getenv("SEPAY_AUTH_TOKEN")
+    # Load from globals
+    sepay_config = globals.sepay_info
+    token = sepay_config.get("SEPAY_AUTH_TOKEN", "")
     url = os.getenv("SEPAY_TRANSACTION_URL")
     
     if not token:

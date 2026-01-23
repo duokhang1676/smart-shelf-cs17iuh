@@ -18,6 +18,7 @@ from datetime import datetime
 
 import requests
 from dotenv import load_dotenv
+from app.modules import globals
 
 load_dotenv()
 
@@ -29,10 +30,11 @@ class VietQRPaymentAPI:
     @staticmethod
     def generate_qr(amount, order_id=None):
         add_info = f"Pay for snack machine {order_id}" if order_id else "Pay for snack machine"
+        sepay_config = globals.sepay_info
         payload = {
-            "accountNo": os.getenv("VIETQR_ACCOUNT_NO"),
-            "accountName": os.getenv("VIETQR_ACCOUNT_NAME"),
-            "acqId": os.getenv("VIETQR_ACQ_ID"),
+            "accountNo": sepay_config.get("VIETQR_ACCOUNT_NO", ""),
+            "accountName": sepay_config.get("VIETQR_ACCOUNT_NAME", ""),
+            "acqId": sepay_config.get("VIETQR_ACQ_ID", ""),
             "addInfo": add_info,
             "amount": amount,
             "template": "compact"
@@ -43,7 +45,14 @@ class VietQRPaymentAPI:
         return response.json()
 
     @staticmethod
-    def check_sepay_payment(token, bank_account_id, amount, add_info=None, order_id=None, days=1):
+    def check_sepay_payment(token=None, bank_account_id=None, amount=None, add_info=None, order_id=None, days=1):
+        # Load from globals if not provided
+        sepay_config = globals.sepay_info
+        if token is None:
+            token = sepay_config.get("SEPAY_AUTH_TOKEN", "")
+        if bank_account_id is None:
+            bank_account_id = sepay_config.get("SEPAY_BANK_ACCOUNT_ID", "")
+        
         SEPAY_TRANSACTION_URL = os.getenv("SEPAY_TRANSACTION_URL")
         today = datetime.now().strftime("%Y-%m-%d")
         

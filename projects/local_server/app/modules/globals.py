@@ -25,6 +25,31 @@ LOADCELL_NUM_1 = 8
 LOADCELL_NUM_2 = 7
 LOADCELL_NUM_TOTAL = LOADCELL_NUM_1 + LOADCELL_NUM_2
 
+# Load Sepay info from JSON
+def load_sepay_info():
+    """Load Sepay configuration from sepay_info.json"""
+    sepay_info_path = os.path.abspath(os.path.join(__file__, "../../..", "database/sepay_info.json"))
+    try:
+        return read_file(sepay_info_path)
+    except Exception as e:
+        print(f"Warning: Could not load sepay_info.json: {e}")
+        return {
+            "VIETQR_ACCOUNT_NO": "",
+            "VIETQR_ACCOUNT_NAME": "",
+            "VIETQR_ACQ_ID": "",
+            "SEPAY_AUTH_TOKEN": "",
+            "SEPAY_BANK_ACCOUNT_ID": ""
+        }
+
+def reload_sepay_info():
+    """Reload Sepay info from JSON file (call after cloud sync)"""
+    global sepay_info
+    sepay_info = load_sepay_info()
+    print("Sepay info reloaded from sepay_info.json")
+
+# Global Sepay configuration
+sepay_info = load_sepay_info()
+
 # Functions to extract product attributes
 def load_weight_of_one(products_data):
     return [int(p["weight"] / 3) for p in products_data]

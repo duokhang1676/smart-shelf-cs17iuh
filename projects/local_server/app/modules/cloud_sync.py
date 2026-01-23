@@ -145,6 +145,32 @@ def load_posters_from_cloud():
     except Exception as e:
         print(f"Warning: Error loading posters from cloud: {e}")
 
+def load_sepay_info_from_cloud():
+    try:
+        load_dotenv()
+        url = os.getenv("GET_SEPAY_INFO_API_KEY")
+        if not url:
+            print("Warning: GET_SEPAY_INFO_API_KEY not configured")
+            return
+        
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            sepay_info = response.json()
+            json_path = os.path.join(os.path.dirname(__file__), '..', '..', 'database', 'sepay_info.json')
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(sepay_info, f, ensure_ascii=False, indent=4)
+            print("Data written to sepay_info.json")
+            
+            # Reload globals.sepay_info to use new values
+            globals.reload_sepay_info()
+        else:
+            print(f"Failed to retrieve Sepay info: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"Warning: Could not connect to cloud for Sepay info: {e}")
+        print("Continuing with local data...")
+    except Exception as e:
+        print(f"Warning: Error loading Sepay info from cloud: {e}")
+
 def post_order_data_to_cloud(order_data):
     load_dotenv()
     file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame/frame_box.jpg"))

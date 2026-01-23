@@ -204,8 +204,10 @@ def register_websocket_handlers(socketio, get_cart_func):
         def payment_monitoring_task():
             print(f'Starting {monitoring_type} payment monitoring for order {order_id}, total {total}')
             
-            SEPAY_AUTH_TOKEN = os.getenv("SEPAY_AUTH_TOKEN")
-            SEPAY_BANK_ACCOUNT_ID = os.getenv("SEPAY_BANK_ACCOUNT_ID")
+            # Load Sepay config from globals
+            sepay_config = globals.sepay_info
+            SEPAY_AUTH_TOKEN = sepay_config.get("SEPAY_AUTH_TOKEN", "")
+            SEPAY_BANK_ACCOUNT_ID = sepay_config.get("SEPAY_BANK_ACCOUNT_ID", "")
             add_info = f"Pay for snack machine {order_id}"  # Match with QR generation content
             
             # Debug SEPAY configuration

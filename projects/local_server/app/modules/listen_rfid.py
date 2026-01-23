@@ -19,7 +19,7 @@ from app.modules import globals
 import keyboard
 import numpy as np
 import threading
-from app.modules.cloud_sync import load_products_from_cloud, load_rfids_from_cloud, post_history_added_products_to_cloud, load_posters_from_cloud, load_combo_from_cloud
+from app.modules.cloud_sync import load_products_from_cloud, load_rfids_from_cloud, post_history_added_products_to_cloud, load_posters_from_cloud, load_combo_from_cloud, load_sepay_info_from_cloud
 from app.utils.file_utils import write_file
 from app.utils.sound_utils import play_sound
 from dotenv import load_dotenv
@@ -62,6 +62,7 @@ def start_listen_rfid():
                             load_rfids_from_cloud()
                             load_combo_from_cloud()
                             load_posters_from_cloud()
+                            load_sepay_info_from_cloud()
                         except Exception as e:
                             print(f"Error loading data from cloud: {e}")
                     else : # added

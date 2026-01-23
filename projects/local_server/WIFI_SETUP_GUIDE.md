@@ -33,12 +33,12 @@ app/
 - Nếu đã kết nối WiFi → Tự động tắt hotspot
 
 ### 2. Hotspot Configuration
-- **SSID:** JetsonSmartShelf
-- **Password:** smartshelf123
+- **SSID:** SmartShelf-CS17IUH
+- **Password:** 00001111
 - **Interface:** wlan0
 
 ### 3. Web Interface
-Truy cập: `http://<jetson-ip>/wifi-setup` hoặc `http://192.168.4.1/wifi-setup` (khi kết nối hotspot)
+Truy cập: `http://10.42.0.1:5000/wifi-setup` (khi kết nối hotspot)
 
 **Tính năng:**
 - Hiển thị trạng thái kết nối hiện tại

@@ -20,13 +20,16 @@ import logging
 import sys
 import shutil
 import os
+import dotenv
+from dotenv import load_dotenv
 from app.utils.sound_utils import play_sound
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-HOTSPOT_SSID = "SmartShelf-CS17IUH"
-HOTSPOT_PASSWORD = "00001111"
+load_dotenv()
+HOTSPOT_SSID = os.getenv("HOTSPOT_SSID")
+HOTSPOT_PASSWORD = os.getenv("HOTSPOT_PASSWORD")
 CHECK_INTERVAL = 15  # seconds - Tăng lên để tránh check quá nhanh
 
 # Kiểm tra platform và nmcli
