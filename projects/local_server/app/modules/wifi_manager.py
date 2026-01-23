@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 HOTSPOT_SSID = "JetsonSmartShelf"
 HOTSPOT_PASSWORD = "smartshelf123"
-CHECK_INTERVAL = 10  # seconds
+CHECK_INTERVAL = 15  # seconds - Tăng lên để tránh check quá nhanh
 
 # Kiểm tra platform và nmcli
 IS_LINUX = sys.platform.startswith('linux')
@@ -202,6 +202,8 @@ def connect_to_wifi(ssid, password=None):
     
     # Đánh dấu đang kết nối để wifi_monitor không can thiệp
     is_connecting = True
+    logger.info("Setting is_connecting flag to prevent wifi_monitor interference")
+    time.sleep(1)  # Đợi wifi_monitor nhận flag
     
     try:
         logger.info(f"Attempting to connect to WiFi: {ssid}")
@@ -239,13 +241,18 @@ def connect_to_wifi(ssid, password=None):
             wifi_status['ssid'] = ssid
             wifi_status['hotspot_active'] = False
             
-            # Đợi kết nối ổn định
+            # Đợi kết nối ổn định - tăng thời gian
             logger.info("Waiting for connection to stabilize...")
-            time.sleep(5)
+            time.sleep(10)  # Tăng từ 5s lên 10s
             
-            # Verify connection
-            check_wifi_connection()
+            # Verify connection nhiều lần
+            for i in range(3):
+                if check_wifi_connection():
+                    logger.info(f"Connection verified (attempt {i+1}/3)")
+                    break
+                time.sleep(2)
             
+            logger.info("Connection established and stable")
             return True, "Connected successfully"
         else:
             error_msg = result.stderr.strip()
@@ -280,13 +287,18 @@ def connect_to_wifi(ssid, password=None):
                                 wifi_status['ssid'] = ssid
                                 wifi_status['hotspot_active'] = False
                                 
-                                # Đợi kết nối ổn định
+                                # Đợi kết nối ổn định - tăng thời gian
                                 logger.info("Waiting for connection to stabilize...")
-                                time.sleep(5)
+                                time.sleep(10)
                                 
-                                # Verify connection
-                                check_wifi_connection()
+                                # Verify connection nhiều lần
+                                for i in range(3):
+                                    if check_wifi_connection():
+                                        logger.info(f"Connection verified (attempt {i+1}/3)")
+                                        break
+                                    time.sleep(2)
                                 
+                                logger.info("Connection established and stable")
                                 return True, "Connected successfully"
                             break
             
@@ -396,8 +408,14 @@ def wifi_monitor():
     while True:
         try:
             # Bỏ qua nếu đang scan WiFi hoặc đang kết nối
-            if is_scanning or is_connecting:
-                time.sleep(2)
+            if is_scanning:
+                logger.debug("Skipping wifi_monitor: is_scanning=True")
+                time.sleep(3)
+                continue
+            
+            if is_connecting:
+                logger.info("Skipping wifi_monitor: WiFi connection in progress...")
+                time.sleep(5)  # Đợi lâu hơn khi đang connect
                 continue
             
             connected = check_wifi_connection()
