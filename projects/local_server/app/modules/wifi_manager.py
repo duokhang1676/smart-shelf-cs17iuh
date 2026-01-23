@@ -46,6 +46,7 @@ last_scan_results = []
 SCAN_COOLDOWN = 10  # giây - thời gian tối thiểu giữa các lần scan
 is_scanning = False  # Flag để tránh race condition với wifi_monitor
 is_connecting = False  # Flag khi đang kết nối WiFi
+stop_wifi_monitor = False  # Flag để dừng wifi_monitor khi đã connected
 
 def check_system_requirements():
     """Kiểm tra xem hệ thống có đủ yêu cầu không"""
