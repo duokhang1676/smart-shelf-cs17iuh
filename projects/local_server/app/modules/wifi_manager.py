@@ -203,10 +203,21 @@ def connect_to_wifi(ssid, password=None):
         # Tắt hotspot nếu đang bật
         if wifi_status['hotspot_active']:
             stop_hotspot()
+            # Đợi interface chuyển chế độ
+            time.sleep(3)
         
-        # Xóa kết nối cũ nếu có
+        # Scan lại để NetworkManager có thông tin WiFi mới nhất
+        logger.info("Scanning for WiFi networks before connecting...")
+        try:
+            subprocess.run(['nmcli', 'dev', 'wifi', 'rescan'], 
+                          capture_output=True, timeout=5, check=False)
+            time.sleep(3)  # Đợi scan hoàn tất
+        except Exception as e:
+            logger.warning(f"Rescan warning: {e}")
+        
+        # Xóa kết nối cũ nếu có (bỏ qua lỗi nếu không tồn tại)
         subprocess.run(['nmcli', 'connection', 'delete', ssid], 
-                      capture_output=True, timeout=5)
+                      capture_output=True, timeout=5, check=False)
         
         # Kết nối WiFi
         if password:
@@ -223,8 +234,41 @@ def connect_to_wifi(ssid, password=None):
             wifi_status['hotspot_active'] = False
             return True, "Connected successfully"
         else:
-            logger.error(f"Failed to connect: {result.stderr}")
-            return False, result.stderr
+            error_msg = result.stderr.strip()
+            logger.error(f"Failed to connect: {error_msg}")
+            
+            # Nếu lỗi "No network found", thử với BSSID
+            if "No network" in error_msg or "not found" in error_msg.lower():
+                logger.info("Trying alternative connection method...")
+                # List lại WiFi để lấy thông tin
+                list_result = subprocess.run(
+                    ['nmcli', '-t', '-f', 'SSID,BSSID', 'dev', 'wifi', 'list'],
+                    capture_output=True, text=True, timeout=5
+                )
+                
+                # Tìm BSSID của SSID cần kết nối
+                for line in list_result.stdout.split('\n'):
+                    if line.startswith(ssid + ':'):
+                        parts = line.split(':')
+                        if len(parts) >= 2:
+                            bssid = parts[1]
+                            logger.info(f"Found BSSID: {bssid}, trying to connect via BSSID...")
+                            
+                            if password:
+                                cmd_bssid = ['nmcli', 'dev', 'wifi', 'connect', bssid, 'password', password]
+                            else:
+                                cmd_bssid = ['nmcli', 'dev', 'wifi', 'connect', bssid]
+                            
+                            result2 = subprocess.run(cmd_bssid, capture_output=True, text=True, timeout=30)
+                            if result2.returncode == 0:
+                                logger.info(f"Successfully connected via BSSID")
+                                wifi_status['connected'] = True
+                                wifi_status['ssid'] = ssid
+                                wifi_status['hotspot_active'] = False
+                                return True, "Connected successfully"
+                            break
+            
+            return False, error_msg
     except FileNotFoundError:
         error_msg = "nmcli not found. Install: sudo apt-get install network-manager"
         logger.error(error_msg)
