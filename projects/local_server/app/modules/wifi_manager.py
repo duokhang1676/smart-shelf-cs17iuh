@@ -51,6 +51,9 @@ stop_wifi_monitor = False  # Flag để dừng wifi_monitor khi đã connected
 # Event để báo hiệu khi WiFi đã kết nối (dùng để sync với main thread)
 wifi_ready_event = threading.Event()
 
+# Callback để gọi khi WiFi kết nối thành công từ hotspot mode
+on_wifi_connected_callback = None
+
 def check_system_requirements():
     """Kiểm tra xem hệ thống có đủ yêu cầu không"""
     if not IS_LINUX:
@@ -283,6 +286,11 @@ def connect_to_wifi(ssid, password=None):
             # Báo hiệu rằng WiFi đã sẵn sàng
             wifi_ready_event.set()
             
+            # Gọi callback nếu có (cho main.py biết để start services)
+            if on_wifi_connected_callback:
+                logger.info("Calling on_wifi_connected callback...")
+                threading.Thread(target=on_wifi_connected_callback, daemon=True).start()
+            
             return True, "Connected successfully"
         else:
             error_msg = result.stderr.strip()
@@ -485,7 +493,11 @@ def wifi_monitor():
                     logger.info("Playing WiFi connection error sound")
                 except Exception as e:
                     logger.warning(f"Could not play error sound: {e}")
-                start_hotspot()
+                
+                if start_hotspot():
+                    # Báo hiệu rằng hotspot đã sẵn sàng (để web server có thể chạy)
+                    logger.info("Hotspot ready - setting wifi_ready_event")
+                    wifi_ready_event.set()
             elif connected and wifi_status['hotspot_active']:
                 logger.info("WiFi connected. Stopping hotspot...")
                 stop_hotspot()
@@ -508,27 +520,42 @@ def start_wifi_manager():
     wifi_monitor()
 
 def wait_for_wifi(timeout=None):
-    """Chờ đợi cho đến khi WiFi kết nối thành công
+    """Chờ đợi cho đến khi WiFi kết nối thành công HOẶC hotspot đã sẵn sàng
     
     Args:
         timeout: Thời gian chờ tối đa (seconds). None = chờ vô thời hạn
     
     Returns:
-        True nếu WiFi đã connected, False nếu timeout hoặc không hỗ trợ
+        True nếu WiFi/hotspot đã sẵn sàng, False nếu timeout hoặc không hỗ trợ
     """
     if not HAS_NMCLI or not IS_LINUX:
         logger.warning("WiFi Manager không hỗ trợ trên platform này")
         return True  # Cho phép tiếp tục nếu không hỗ trợ
     
-    logger.info("Waiting for WiFi connection...")
+    logger.info("Waiting for WiFi connection or hotspot...")
     result = wifi_ready_event.wait(timeout=timeout)
     
     if result:
-        logger.info("WiFi connection confirmed!")
+        if wifi_status['connected']:
+            logger.info(f"WiFi connected to: {wifi_status['ssid']}")
+        elif wifi_status['hotspot_active']:
+            logger.info("Hotspot is active and ready")
+        else:
+            logger.info("Network ready!")
     else:
-        logger.warning(f"WiFi connection timeout after {timeout} seconds")
+        logger.warning(f"Network setup timeout after {timeout} seconds")
     
     return result
+
+def set_wifi_connected_callback(callback):
+    """Set callback để gọi khi WiFi kết nối thành công
+    
+    Args:
+        callback: Function không tham số để gọi khi WiFi connected
+    """
+    global on_wifi_connected_callback
+    on_wifi_connected_callback = callback
+    logger.info("WiFi connected callback registered")
 
 def get_wifi_status():
     """Lấy trạng thái WiFi hiện tại"""
