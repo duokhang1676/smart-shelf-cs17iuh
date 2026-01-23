@@ -42,6 +42,7 @@ wifi_status = {
 last_scan_time = 0
 last_scan_results = []
 SCAN_COOLDOWN = 10  # giây - thời gian tối thiểu giữa các lần scan
+is_scanning = False  # Flag để tránh race condition với wifi_monitor
 
 def check_system_requirements():
     """Kiểm tra xem hệ thống có đủ yêu cầu không"""
@@ -87,7 +88,7 @@ def check_wifi_connection():
 
 def scan_wifi_networks():
     """Quét các mạng WiFi khả dụng"""
-    global last_scan_time, last_scan_results
+    global last_scan_time, last_scan_results, is_scanning
     
     if not HAS_NMCLI or not IS_LINUX:
         logger.error("Cannot scan WiFi: nmcli not available")
@@ -100,6 +101,9 @@ def scan_wifi_networks():
     if time_since_last_scan < SCAN_COOLDOWN and last_scan_results:
         logger.info(f"Using cached WiFi scan results (scanned {int(time_since_last_scan)}s ago)")
         return last_scan_results
+    
+    # Đánh dấu đang scan để wifi_monitor không can thiệp
+    is_scanning = True
     
     try:
         # Kiểm tra xem wlan0 có đang ở chế độ AP không
@@ -182,6 +186,9 @@ def scan_wifi_networks():
     except Exception as e:
         logger.error(f"Error scanning WiFi networks: {e}")
         return []
+    finally:
+        # Luôn reset flag khi hoàn thành scan
+        is_scanning = False
 
 def connect_to_wifi(ssid, password=None):
     """Kết nối tới mạng WiFi"""
@@ -319,6 +326,11 @@ def wifi_monitor():
     
     while True:
         try:
+            # Bỏ qua nếu đang scan WiFi
+            if is_scanning:
+                time.sleep(2)
+                continue
+            
             connected = check_wifi_connection()
             
             if not connected and not wifi_status['hotspot_active']:
