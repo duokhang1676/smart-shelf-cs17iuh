@@ -102,10 +102,22 @@ def scan_wifi_networks():
         return last_scan_results
     
     try:
-        # KHÔNG gọi rescan để tránh lỗi "scanning not allowed"
-        # NetworkManager tự động scan định kỳ, chỉ cần lấy kết quả từ cache
+        # Nếu hotspot đang bật, tạm thời tắt để scan WiFi
+        hotspot_was_active = wifi_status['hotspot_active']
+        if hotspot_was_active:
+            logger.info("Temporarily stopping hotspot to scan WiFi networks...")
+            stop_hotspot()
+            time.sleep(2)  # Đợi interface chuyển chế độ
         
-        # Lấy danh sách WiFi từ cache của NetworkManager
+        # Force rescan để lấy danh sách mới nhất
+        try:
+            subprocess.run(['nmcli', 'dev', 'wifi', 'rescan'], 
+                          capture_output=True, timeout=5, check=False)
+            time.sleep(3)  # Đợi scan hoàn tất
+        except Exception as e:
+            logger.warning(f"Rescan warning: {e}")
+        
+        # Lấy danh sách WiFi
         result = subprocess.run(['nmcli', '-t', '-f', 'SSID,SIGNAL,SECURITY', 'dev', 'wifi', 'list'],
                               capture_output=True, text=True, timeout=10)
         
@@ -120,6 +132,10 @@ def scan_wifi_networks():
                     signal = parts[1]
                     security = parts[2]
                     
+                    # Bỏ qua SSID của hotspot của chính mình
+                    if ssid == HOTSPOT_SSID:
+                        continue
+                    
                     # Bỏ qua SSID trống hoặc trùng lặp
                     if ssid and ssid not in seen_ssids:
                         seen_ssids.add(ssid)
@@ -128,6 +144,12 @@ def scan_wifi_networks():
                             'signal': int(signal) if signal.isdigit() else 0,
                             'security': security if security else 'Open'
                         })
+        
+        # Bật lại hotspot nếu trước đó nó đang bật
+        if hotspot_was_active:
+            logger.info("Restarting hotspot after scan...")
+            time.sleep(1)
+            start_hotspot()
         
         # Sắp xếp theo cường độ tín hiệu
         networks.sort(key=lambda x: x['signal'], reverse=True)
