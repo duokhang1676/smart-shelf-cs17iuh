@@ -26,7 +26,7 @@ def main():
     threading.Thread(target=play_sound, args=("app/static/sounds/start-program.mp3",)).start()
 
     # Khởi động WiFi Manager trước để kiểm tra kết nối
-    wifi_manager.start_wifi_manager()
+    threading.Thread(target=wifi_manager.start_wifi_manager, daemon=True).start()
     
     threading.Thread(target=webserver.start_webserver, daemon=True).start()
     # threading.Thread(target=listen_rfid.start_listen_rfid, daemon=True).start()
