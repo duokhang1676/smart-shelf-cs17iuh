@@ -37,11 +37,11 @@ def start_all_services():
     print("Starting all services (RFID, sensors, tracking, voice command)...")
     services_started = True
     
-    # threading.Thread(target=listen_rfid.start_listen_rfid, daemon=True).start()
-    # threading.Thread(target=xg26_sensor.start_xg26_sensor, daemon=True).start()
-    # threading.Thread(target=update_loadcell_quantity.start_update_loadcell_quantity, daemon=True).start()
-    # threading.Thread(target=tracking_customer_behavior.start_tracking_customer_behavior, daemon=True).start()
-    # threading.Thread(target=xg26_voice_command.start_xg26_voice_command, daemon=True).start()
+    threading.Thread(target=listen_rfid.start_listen_rfid, daemon=True).start()
+    threading.Thread(target=xg26_sensor.start_xg26_sensor, daemon=True).start()
+    threading.Thread(target=update_loadcell_quantity.start_update_loadcell_quantity, daemon=True).start()
+    threading.Thread(target=tracking_customer_behavior.start_tracking_customer_behavior, daemon=True).start()
+    #threading.Thread(target=xg26_voice_command.start_xg26_voice_command, daemon=True).start()
     print("All services started successfully!")
 
 def on_wifi_connected():

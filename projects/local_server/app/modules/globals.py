@@ -17,7 +17,7 @@ import threading
 import numpy as np
 import os
 from app.utils.file_utils import read_file
-from app.modules.cloud_sync import load_rfids_from_cloud, load_combo_from_cloud, load_posters_from_cloud
+from app.modules.cloud_sync import load_rfids_from_cloud, load_combo_from_cloud, load_posters_from_cloud, load_sepay_info_from_cloud
 from app.utils.string_utils import remove_accents
 
 # Define loadcell configuration
@@ -530,3 +530,9 @@ try:
     load_combo_from_cloud()
 except Exception as e:
     print(f"Could not load combos from cloud: {e}. Using local data.")
+
+try:
+    load_sepay_info_from_cloud()
+    reload_sepay_info()
+except Exception as e:
+    print(f"Could not load sepay info from cloud: {e}. Using local data.")

@@ -1,7 +1,21 @@
 {
-"VIETQR_ACCOUNT_NO": "20356972399", 
-"VIETQR_ACCOUNT_NAME": "VO DUONG KHANG",
-"VIETQR_ACQ_ID": "970423",
-"SEPAY_AUTH_TOKEN": "7JZ4VS6VHX6TTEGLAO4ZTLWEK3CRIMWMZQBYP3AGQ0NPEP7G1U1DV0OHLQXIBF2V",
-"SEPAY_BANK_ACCOUNT_ID": "6987"
+    "_id": "6971ff2175ca8d59373e987b",
+    "__v": 0,
+    "active": true,
+    "apiKey": "123123",
+    "apiSecret": "123123",
+    "callbackUrl": "123",
+    "createdAt": "2026-01-22T10:42:41.359Z",
+    "merchantCode": "123",
+    "sandbox": false,
+    "updatedAt": "2026-01-24T18:05:38.132Z",
+    "webhookUrl": "123",
+    "vietqrAccountName": "a",
+    "vietqrAccountNo": "a",
+    "vietqrAcqId": "a",
+    "shelf_id": "685aafc545619025a0bb9f27",
+    "sepayAuthToken": "a",
+    "sepayBankAccountId": "a",
+    "lastUpdated": "2026-01-24T18:05:38.132Z",
+    "id": "6971ff2175ca8d59373e987b"
 }
