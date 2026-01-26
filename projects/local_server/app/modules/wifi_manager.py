@@ -31,6 +31,7 @@ load_dotenv()
 HOTSPOT_SSID = os.getenv("HOTSPOT_SSID")
 HOTSPOT_PASSWORD = os.getenv("HOTSPOT_PASSWORD")
 CHECK_INTERVAL = 15  # seconds - Tăng lên để tránh check quá nhanh
+NMCLI_TIMEOUT = 10  # seconds - Timeout cho các lệnh nmcli
 
 # Kiểm tra platform và nmcli
 IS_LINUX = sys.platform.startswith('linux')
@@ -76,9 +77,9 @@ def check_system_requirements():
 def check_wifi_connection():
     """Kiểm tra xem Jetson có kết nối WiFi không"""
     try:
-        # Kiểm tra kết nối WiFi qua device status
+        # Kiểm tra kết nối WiFi qua device status với timeout dài hơn
         result = subprocess.run(['nmcli', '-t', '-f', 'DEVICE,TYPE,STATE,CONNECTION', 'dev'],
-                              capture_output=True, text=True, timeout=5)
+                              capture_output=True, text=True, timeout=NMCLI_TIMEOUT)
         
         if result.returncode == 0:
             for line in result.stdout.split('\n'):
@@ -89,7 +90,7 @@ def check_wifi_connection():
                     if dev_type == 'wifi' and state == 'connected' and connection and 'Hotspot' not in connection:
                         # Lấy SSID
                         ssid_result = subprocess.run(['nmcli', '-t', '-f', 'active,ssid', 'dev', 'wifi'],
-                                                    capture_output=True, text=True, timeout=5)
+                                                    capture_output=True, text=True, timeout=NMCLI_TIMEOUT)
                         
                         for ssid_line in ssid_result.stdout.split('\n'):
                             if ssid_line.startswith('yes:'):
@@ -459,10 +460,12 @@ def wifi_monitor():
     # Kiểm tra ngay xem đã có WiFi chưa
     if check_wifi_connection():
         logger.info(f"Already connected to WiFi: {wifi_status['ssid']}")
-        logger.info("WiFi monitor will run in background to maintain connection")
+        logger.info("WiFi connection stable - stopping monitor to avoid interference")
         # Báo hiệu rằng WiFi đã sẵn sàng
         wifi_ready_event.set()
-        # Nếu đã kết nối, không cần bật hotspot
+        # Nếu đã kết nối WiFi, dừng monitor để tránh can thiệp
+        logger.info("WiFi monitor stopped: Already connected to WiFi")
+        return
     
     while True:
         try:
@@ -483,6 +486,12 @@ def wifi_monitor():
                 continue
             
             connected = check_wifi_connection()
+            
+            # Nếu đã kết nối WiFi thành công, dừng monitor
+            if connected:
+                logger.info(f"WiFi stable on {wifi_status['ssid']} - stopping monitor")
+                wifi_ready_event.set()
+                break
             
             if not connected and not wifi_status['hotspot_active']:
                 logger.warning("No WiFi connection detected. Starting hotspot...")
