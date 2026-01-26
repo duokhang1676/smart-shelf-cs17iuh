@@ -13,17 +13,41 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 '''
+# from gtts import gTTS
+# import vlc
+# import os
+
+# def speech_text(text):
+#     path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/temp.mp3"))
+#     tts = gTTS(text=text, lang='vi', slow=False)
+#     tts.save(path)
+#     player = vlc.MediaPlayer(path)
+#     player.play()
+
+# def play_sound(path):
+#     player = vlc.MediaPlayer(path)
+#     player.play()
+
 from gtts import gTTS
-import vlc
+import subprocess
 import os
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+SOUND_PATH = os.path.join(BASE_DIR, "app/static/sounds/temp.mp3")
+
 def speech_text(text):
-    path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/temp.mp3"))
     tts = gTTS(text=text, lang='vi', slow=False)
-    tts.save(path)
-    player = vlc.MediaPlayer(path)
-    player.play()
+    tts.save(SOUND_PATH)
+
+    subprocess.run(
+        ["mpg123", "-q", "-a", "hw:2,0", SOUND_PATH],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
 
 def play_sound(path):
-    player = vlc.MediaPlayer(path)
-    player.play()
+    subprocess.run(
+        ["mpg123", "-q", "-a", "hw:2,0", path],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
