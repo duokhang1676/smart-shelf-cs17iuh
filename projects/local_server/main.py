@@ -14,14 +14,7 @@
 * limitations under the License.
 '''
 import threading
-import app.webserver as webserver
-from app.modules import update_loadcell_quantity
-from app.modules import listen_rfid
-from app.modules import xg26_voice_command
-from app.modules import xg26_sensor
-from app.modules import tracking_customer_behavior
 from app.modules import wifi_manager
-from app.modules import wifi_config_server
 from app.utils.sound_utils import play_sound
 
 def main():
@@ -42,9 +35,17 @@ def main():
     wifi_status = wifi_manager.get_wifi_status()
     
     if wifi_status['connected']:
-        # Có kết nối mạng → Chạy TẤT CẢ các luồng (webserver + services)
+        # Có kết nối mạng → Import và chạy TẤT CẢ các module
         print(f"✓ WiFi connected to {wifi_status['ssid']}!")
-        print("Starting webserver and all services...")
+        print("Loading modules and starting services...")
+        
+        # Import các module chỉ khi có kết nối mạng
+        import app.webserver as webserver
+        from app.modules import update_loadcell_quantity
+        from app.modules import listen_rfid
+        from app.modules import xg26_sensor
+        from app.modules import tracking_customer_behavior
+        # from app.modules import xg26_voice_command
         
         threading.Thread(target=webserver.start_webserver, daemon=True).start()
         threading.Thread(target=listen_rfid.start_listen_rfid, daemon=True).start()
@@ -55,9 +56,13 @@ def main():
         
         print("All services started successfully!")
     else:
-        # Không có kết nối mạng → CHỈ chạy WiFi config server
+        # Không có kết nối mạng → CHỈ import và chạy WiFi config server
         print("✗ No WiFi connection detected")
         print("Starting WiFi configuration mode...")
+        
+        # Import wifi_config_server chỉ khi cần
+        from app.modules import wifi_config_server
+        
         print(f"Connect to hotspot '{wifi_manager.HOTSPOT_SSID}' and visit http://10.42.0.1:5000")
         print("After WiFi setup, please reboot Jetson to start all services")
         
