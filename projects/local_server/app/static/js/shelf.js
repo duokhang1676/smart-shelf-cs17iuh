@@ -87,25 +87,36 @@ function initializeWebSocket() {
     });
     
     // Listen for loadcell updates (for real-time shelf status)
-    // socket.on('loadcell_update', function(data) {
-    //     console.log('Loadcell update received');
-    //     updateLoadcellTotal(); // Update the total when loadcell data changes
-    //     updateMaxQuantityInfo(); // Update individual max_quantity info
+    socket.on('loadcell_update', function(data) {
+        console.log('Loadcell update received on shelf page');
         
-    //     // Check for taken quantity changes and redirect to cart
-    //     if (data.taken_quantity && Array.isArray(data.taken_quantity)) {
-    //         const currentTakenQuantities = data.taken_quantity;
-            
-    //         // Check if any product has been taken (taken quantity > 0)
-    //         const hasProductTaken = currentTakenQuantities.some(qty => qty > 0);
-    //         console.log('Has product taken:', hasProductTaken, 'Current quantities:', currentTakenQuantities);
-            
-    //         if (hasProductTaken) {
-    //             console.log('Product taken detected on shelf page, redirecting to cart page...');
-    //             window.location.href = '/cart';
-    //         }
-    //     }
-    // });
+        // Always update the display when loadcell data changes
+        updateLoadcellTotal(); // Update the total when loadcell data changes
+        updateMaxQuantityInfo(); // Update individual quantity info
+        
+        // Only redirect to cart if NOT in adding state and products are taken
+        fetch('/api/rfid-state')
+            .then(response => response.json())
+            .then(stateData => {
+                const isAdding = stateData.success && stateData.is_adding;
+                
+                if (!isAdding && data.taken_quantity && Array.isArray(data.taken_quantity)) {
+                    const currentTakenQuantities = data.taken_quantity;
+                    
+                    // Check if any product has been taken (taken quantity > 0)
+                    const hasProductTaken = currentTakenQuantities.some(qty => qty > 0);
+                    console.log('Has product taken:', hasProductTaken, 'Current quantities:', currentTakenQuantities);
+                    
+                    if (hasProductTaken) {
+                        console.log('Product taken detected on shelf page, redirecting to cart page...');
+                        window.location.href = '/cart';
+                    }
+                }
+            })
+            .catch(error => {
+                console.warn('Could not check adding state:', error);
+            });
+    });
     
     // Listen for combo detection and redirect
     socket.on('redirect_to_combo', function(data) {
@@ -138,6 +149,9 @@ function initializeWebSocket() {
         
         // Lock navigation during employee adding process
         lockNavigation();
+        
+        // Show notification
+        showRFIDIndicator(data.message || 'Nhân viên đang thêm hàng...', 'info');
     });
 
     socket.on('max_quantity_added_notification', function(data) {
