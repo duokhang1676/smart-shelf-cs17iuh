@@ -30,9 +30,15 @@ def load_sepay_info():
     """Load Sepay configuration from sepay_info.json"""
     sepay_info_path = os.path.abspath(os.path.join(__file__, "../../..", "database/sepay_info.json"))
     try:
-        print("DEBUG: Loading sepay_info.json from", sepay_info_path)
-        print(read_file(sepay_info_path))
-        return read_file(sepay_info_path)
+        data = read_file(sepay_info_path)
+        # Map camelCase fields from JSON to UPPER_SNAKE_CASE
+        return {
+            "VIETQR_ACCOUNT_NO": data.get("vietqrAccountNo", ""),
+            "VIETQR_ACCOUNT_NAME": data.get("vietqrAccountName", ""),
+            "VIETQR_ACQ_ID": data.get("vietqrAcqId", ""),
+            "SEPAY_AUTH_TOKEN": data.get("sepayAuthToken", ""),
+            "SEPAY_BANK_ACCOUNT_ID": data.get("sepayBankAccountId", "")
+        }
     except Exception as e:
         print(f"Warning: Could not load sepay_info.json: {e}")
         return {
