@@ -188,6 +188,12 @@ async def connect_and_monitor():
             print(f"Xg26 sensor connection error: {e}")
             print("Reconnecting xg26 sensor in 10 seconds...")
             await asyncio.sleep(10)
+
 def start_xg26_sensor():
-    # Start the async event loop
-    asyncio.run(connect_and_monitor())
+    # Create a new event loop for this thread to avoid "Future attached to a different loop" error
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(connect_and_monitor())
+    finally:
+        loop.close()
