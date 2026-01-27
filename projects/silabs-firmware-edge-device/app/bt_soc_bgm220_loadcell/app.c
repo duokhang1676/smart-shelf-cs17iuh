@@ -41,14 +41,14 @@ extern sl_i2cspm_t *sl_i2cspm_mikroe;
 // loadcell information
 int32_t offset[LOADCELL_NUM] = {0};
 int scale[LOADCELL_NUM] = {400};
-int scale_weight = 60;//515; // use Aquafina 500ml to set scale
+int scale_weight = 525; // use Dasani 510ml to set scale
 
 // error threshold
 
 int error_threshold_weight_percent = 20; // weight can error 10%
 
 int loadcell_timeout_delay_threshold = 5;
-int error_weight_delay_threshold = 3;
+int error_weight_delay_threshold = 5;
 
 // delay counter
 int loadcell_timeout_delay[LOADCELL_NUM] = {0};
@@ -253,20 +253,41 @@ void lcd_print_centered(uint8_t row, const char *text) {
 
 void lcd_show(){
   uint8_t pca_addr = i2c_scan();
+  
+  // Reset PCA9548A trước khi sử dụng để đảm bảo trạng thái sạch
+  pca9548a_reset(pca_addr);
+  printf("PCA9548A reset completed at address 0x%02X\n", pca_addr);
+  printf("Starting LCD initialization and display...\n");
+  
+  // Khởi tạo và hiển thị dữ liệu cho từng LCD
   for (uint8_t i = 0; i < LOADCELL_NUM; i++) {
+      printf("[LCD %d] Selecting channel %d...\n", i, i);
+      
+      // Chọn kênh cho LCD thứ i
       lcd_select_channel(pca_addr, i);
-
+      
+      printf("[LCD %d] Initializing...\n", i);
       lcd_init();
       lcd_clear();
-
+      
+      printf("[LCD %d] Displaying: %s - %d\n", i, product_name[i], product_price[i]);
+      
+      // Hiển thị tên sản phẩm
       lcd_print_centered(0, product_name[i]);
 
+      // Hiển thị giá
       char buffer[20];
       format_number_with_commas(product_price[i], buffer, sizeof(buffer));
       strcat(buffer, "d");
-
       lcd_print_centered(1, buffer);
+      
+      printf("[LCD %d] Done!\n", i);
+      sl_sleeptimer_delay_millisecond(200); // Delay giữa mỗi LCD
   }
+  
+  // Tắt tất cả kênh sau khi hoàn thành
+  pca9548a_reset(pca_addr);
+  printf("All LCDs initialized and updated successfully!\n");
 }
 // === Init function ===
 SL_WEAK void app_init(void)
@@ -292,7 +313,8 @@ SL_WEAK void app_init(void)
   check_loadcell_pin();
 
 // debug fix loadcell
-//  last_quantity[1] = 255;
+  last_quantity[1] = 255;
+  last_quantity[5] = 255;
 
   GPIO_PinModeSet(BUTTON_PORT, BUTTON_PIN, gpioModeInputPullFilter, 1);
   // check button_0 pressed to config offset and scale

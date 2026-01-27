@@ -34,6 +34,26 @@ static void delay_ms(uint16_t ms)
 
 // ======================== PCA9548A ========================
 /**
+ * @brief Reset/Initialize PCA9548A (disable all channels)
+ *
+ * @param pca_addr I2C address of the PCA9548A (e.g. 0x70, 0x71)
+ */
+void pca9548a_reset(uint8_t pca_addr)
+{
+    uint8_t data = 0x00;  // Disable all channels
+
+    I2C_TransferSeq_TypeDef seq;
+    seq.addr = pca_addr << 1;
+    seq.flags = I2C_FLAG_WRITE;
+    seq.buf[0].data = &data;
+    seq.buf[0].len = 1;
+    seq.buf[1].len = 0;
+
+    I2CSPM_Transfer(sl_i2cspm_mikroe, &seq);
+    delay_ms(50);  // Delay để PCA9548A ổn định
+}
+
+/**
  * @brief Select a channel (0–7) on a specific PCA9548A multiplexer
  *
  * @param pca_addr I2C address of the PCA9548A (e.g. 0x70, 0x71)
@@ -43,16 +63,24 @@ void lcd_select_channel(uint8_t pca_addr, uint8_t channel)
 {
     if (channel > 7) return;
 
-    uint8_t data = 1 << channel;
-
     I2C_TransferSeq_TypeDef seq;
-    seq.addr = pca_addr << 1;  // Correct I2C 8-bit address (shifted)
+    uint8_t data;
+    
+    // Bước 1: Tắt tất cả kênh trước
+    data = 0x00;
+    seq.addr = pca_addr << 1;
     seq.flags = I2C_FLAG_WRITE;
     seq.buf[0].data = &data;
     seq.buf[0].len = 1;
     seq.buf[1].len = 0;
-
     I2CSPM_Transfer(sl_i2cspm_mikroe, &seq);
+    delay_ms(20);  // Delay để PCA9548A tắt kênh
+    
+    // Bước 2: Chọn kênh mới
+    data = 1 << channel;
+    seq.buf[0].data = &data;
+    I2CSPM_Transfer(sl_i2cspm_mikroe, &seq);
+    delay_ms(50);  // Delay để PCA9548A ổn định kênh mới
 }
 // ==========================================================
 

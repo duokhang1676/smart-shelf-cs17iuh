@@ -27,6 +27,15 @@
 #define PCA9548A_ADDR_2     0x71   // Second PCA9548A (A0–A2 = 100)
 
 /**
+ * @brief Reset/Initialize PCA9548A by disabling all channels.
+ *
+ * Should be called once at startup before using any channels.
+ *
+ * @param pca_addr  I2C address of the PCA9548A (0x70 to 0x77)
+ */
+void pca9548a_reset(uint8_t pca_addr);
+
+/**
  * @brief Select a specific channel on a given PCA9548A I2C multiplexer.
  *
  * This must be called before accessing any device connected to that channel,
