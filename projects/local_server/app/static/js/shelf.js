@@ -26,7 +26,7 @@ let rfidInput = '';
 let rfidTimeout = null;
 
 // DOM elements
-let rfidIndicator, rfidInputDisplay, rfidInputText, completeAddingContainer, completeAddingButton;
+let rfidIndicator, rfidInputDisplay, rfidInputText;
 
 // Initialize page when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -34,13 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
     rfidIndicator = document.getElementById('rfidIndicator');
     rfidInputDisplay = document.getElementById('rfidInputDisplay');
     rfidInputText = document.getElementById('rfidInputText');
-    completeAddingContainer = document.getElementById('completeAddingContainer');
-    completeAddingButton = document.getElementById('completeAddingButton');
-    
-    // Add event listener for complete adding button
-    if (completeAddingButton) {
-        completeAddingButton.addEventListener('click', handleCompleteAdding);
-    }
     
     // Use existing socket or create new one
     if (window.NavigationUtils && window.navigation && window.navigation.socket) {
@@ -340,12 +333,10 @@ function lockNavigation() {
     console.log('Locking navigation - Employee adding max_quantity in progress');
     document.body.classList.add('rfid-adding-mode');
     
-    // Show persistent visual indicator that navigation is locked
-    showRFIDIndicator('Đang thêm hàng...', 'persistent');
-    
-    // Show the complete adding button
-    if (completeAddingContainer) {
-        completeAddingContainer.style.display = 'block';
+    // Show adding status indicator at top left
+    const addingStatusIndicator = document.getElementById('addingStatusIndicator');
+    if (addingStatusIndicator) {
+        addingStatusIndicator.style.display = 'flex';
     }
 }
 
@@ -356,14 +347,10 @@ function unlockNavigation() {
     console.log('Unlocking navigation - Max quantity addition complete');
     document.body.classList.remove('rfid-adding-mode');
     
-    // Hide the persistent "Đang thêm hàng..." indicator
-    if (rfidIndicator) {
-        rfidIndicator.classList.remove('show');
-    }
-
-    // Hide the complete adding button
-    if (completeAddingContainer) {
-        completeAddingContainer.style.display = 'none';
+    // Hide the adding status indicator
+    const addingStatusIndicator = document.getElementById('addingStatusIndicator');
+    if (addingStatusIndicator) {
+        addingStatusIndicator.style.display = 'none';
     }
 
     showRFIDIndicator('Thêm sản phẩm thành công: Đã cập nhật số lượng sản phẩm');
@@ -372,61 +359,4 @@ function unlockNavigation() {
     setTimeout(() => {
         window.location.reload();
     }, 2000); // Wait 2 seconds to show success message before reload
-}
-
-/**
- * Handle complete adding button click
- */
-function handleCompleteAdding() {
-    console.log('Button clicked - handleCompleteAdding called');
-    
-    // Disable button to prevent double-click
-    if (completeAddingButton) {
-        completeAddingButton.disabled = true;
-        completeAddingButton.textContent = 'Đang xử lý...';
-    }
-    
-    // Send API request to complete adding process
-    fetch('/api/added-product', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            message: 'Nhân viên hoàn tất thêm hàng từ nút'
-        })
-    })
-    .then(response => {
-        console.log('API response status:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('API response data:', data);
-        if (data.success) {
-            console.log('Complete adding successful. Waiting for WebSocket event to unlock navigation...');
-            showRFIDIndicator('Đang lưu số lượng sản phẩm...', 'info');
-            
-            // Navigation will be unlocked by WebSocket event 'max_quantity_added_notification'
-            // from rfid_state_monitor.py when it detects rfid_state changed to 0
-        } else {
-            console.error('Failed to complete adding:', data.message);
-            showRFIDIndicator('Lỗi: ' + data.message, 'warning');
-            
-            // Re-enable button on error
-            if (completeAddingButton) {
-                completeAddingButton.disabled = false;
-                completeAddingButton.textContent = 'Hoàn tất thêm hàng';
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error completing adding:', error);
-        showRFIDIndicator('Lỗi kết nối. Vui lòng thử lại.', 'warning');
-        
-        // Re-enable button on error
-        if (completeAddingButton) {
-            completeAddingButton.disabled = false;
-            completeAddingButton.textContent = 'Hoàn tất thêm hàng';
-        }
-    });
 }

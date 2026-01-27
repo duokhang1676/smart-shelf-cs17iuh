@@ -490,62 +490,53 @@ h1 {
     color: #999;
 }
 
-/* Complete Adding Button */
-.complete-adding-button-container {
+/* Adding Status Indicator - Top Left */
+.adding-status-indicator {
     position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1001;
-}
-
-.complete-adding-button {
-    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    top: 80px;
+    left: 20px;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
     color: white;
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 2rem;
-    font-size: 1.2em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0.5rem 1rem rgba(46, 204, 113, 0.3);
-    min-width: 8rem;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    z-index: 1000;
+    font-weight: 600;
+    font-size: 1.1em;
+    animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.complete-adding-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.75rem 1.5rem rgba(46, 204, 113, 0.4);
-    background: linear-gradient(135deg, #2ecc71, #27ae60);
+.adding-status-icon {
+    font-size: 1.5em;
+    animation: bounce 1s ease-in-out infinite;
 }
 
-.complete-adding-button:active {
-    transform: translateY(0);
-    box-shadow: 0 0.25rem 0.5rem rgba(46, 204, 113, 0.3);
+.adding-status-text {
+    letter-spacing: 0.5px;
 }
 
-/* Show button only during adding state */
-.rfid-adding-mode .complete-adding-button-container {
-    display: block !important;
-}
-
-/* Media Queries for Complete Adding Button */
-@media (max-width: 768px) {
-    .complete-adding-button {
-        padding: 0.875rem 1.75rem;
-        font-size: 1.1em;
-        min-width: 7rem;
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 25px rgba(243, 156, 18, 0.7);
     }
 }
 
-@media (max-width: 480px) {
-    .complete-adding-button {
-        padding: 0.75rem 1.5rem;
-        font-size: 1em;
-        min-width: 6rem;
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
     }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Show indicator only during adding state */
+.rfid-adding-mode .adding-status-indicator {
+    display: flex !important;
 }
