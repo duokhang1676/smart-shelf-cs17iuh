@@ -28,8 +28,10 @@ LOADCELL_NUM_TOTAL = LOADCELL_NUM_1 + LOADCELL_NUM_2
 # Load Sepay info from JSON
 def load_sepay_info():
     """Load Sepay configuration from sepay_info.json"""
-    sepay_info_path = os.path.abspath(os.path.join(__file__, "../../", "database/sepay_info.json"))
+    sepay_info_path = os.path.abspath(os.path.join(__file__, "../../..", "database/sepay_info.json"))
     try:
+        print("DEBUG: Loading sepay_info.json from", sepay_info_path)
+        print(read_file(sepay_info_path))
         return read_file(sepay_info_path)
     except Exception as e:
         print(f"Warning: Could not load sepay_info.json: {e}")
