@@ -136,6 +136,32 @@ def api_rfid_state():
 
 @api_bp.route('/products')
 def api_products():
+    """Get all products with their current taken_quantity"""
+    try:
+        # Get current taken quantities
+        taken_quantity = globals.get_taken_quantity()
+        
+        # Load fresh product data from database
+        from app.utils.database_utils import load_products_from_json
+        products = load_products_from_json()
+        
+        # Merge taken_quantity into products as 'qty' field
+        for i, product in enumerate(products):
+            if i < len(taken_quantity):
+                product['qty'] = taken_quantity[i]
+            else:
+                product['qty'] = 0
+        
+        return jsonify(products)
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to get products: {e}")
+        # Fallback to loading from database only
+        from app.utils.database_utils import load_products_from_json
+        return jsonify(load_products_from_json())
+
+@api_bp.route('/cart')
+def api_cart():
     """Get current cart based on real-time taken_quantity and fresh product data"""
     try:
         # Get current taken quantities
@@ -172,7 +198,7 @@ def api_products():
         return jsonify(cart_with_combo)
         
     except Exception as e:
-        print(f"[ERROR] Failed to get products: {e}")
+        print(f"[ERROR] Failed to get cart: {e}")
         # Fallback to cached cart if error
         return jsonify(get_cart())
 
