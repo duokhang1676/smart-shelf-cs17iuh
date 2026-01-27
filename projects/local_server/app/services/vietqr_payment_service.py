@@ -58,7 +58,7 @@ class VietQRPaymentAPI:
         
         params = {
             "transaction_date_min": today,
-            "limit": 20
+            "limit": 5
         }
         
         # Don't add account_number filter to get all transactions
@@ -70,7 +70,7 @@ class VietQRPaymentAPI:
         }
         
         try:
-            response = requests.get(SEPAY_TRANSACTION_URL, headers=headers, params=params, timeout=10)
+            response = requests.get(SEPAY_TRANSACTION_URL, headers=headers, params=params, timeout=5)
             if response.status_code == 401:
                 return "unauthorized", None
             response.raise_for_status()
