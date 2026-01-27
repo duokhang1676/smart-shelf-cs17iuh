@@ -104,7 +104,7 @@ def start_tracking_customer_behavior():
                     if roi_x1 <= cx <= roi_x2 and roi_y1 <= cy <= roi_y2:
                         person_detected = True
                         alert = 0
-                        print(f"[IN ROI] Person detected at ({int(cx)}, {int(cy)})")
+                        #print(f"[IN ROI] Person detected at ({int(cx)}, {int(cy)})")
 
                         if customer_frame is None:
                             customer_frame = frame.copy()
