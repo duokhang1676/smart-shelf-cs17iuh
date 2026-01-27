@@ -126,7 +126,7 @@ def notification_handler_factory(device_name):
         # Update taken quantity in globals - convert to regular int list
         taken_quantity_list = [int(x) for x in taken_quantity]
         globals.set_taken_quantity(taken_quantity_list)
-        if np.any(taken_quantity > 0):
+        if np.any(taken_quantity > 0) and globals.get_rfid_state() != 1:
             globals.is_tracking = True
         else:
             globals.is_tracking = False
