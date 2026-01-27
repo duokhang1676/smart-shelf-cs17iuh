@@ -40,14 +40,14 @@ def speech_text(text):
     tts.save(SOUND_PATH)
 
     subprocess.run(
-        ["mpg123", "-q", "-0", "alsa", SOUND_PATH],
+        ["mpg123", "-q", "-a", "hw:Device,0", SOUND_PATH],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )
 
 def play_sound(path):
     subprocess.run(
-        ["mpg123", "-q", "-0", "alsa", path],
+        ["mpg123", "-q", "-a", "hw:Device,0", path],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
     )
