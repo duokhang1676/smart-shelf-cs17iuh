@@ -55,6 +55,7 @@ def start_listen_rfid():
                     rfid_state = 1 - rfid_state
                     globals.set_rfid_state(rfid_state) # swap state between 0 and 1
                     if rfid_state == 1: # adding
+                        globals.set_is_tracking(False)  # stop tracking when adding products
                         threading.Thread(target=play_sound, args=(sound_file_path_1,)).start()
                         print("Load data from cloud")
                         try:

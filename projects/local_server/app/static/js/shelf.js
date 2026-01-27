@@ -380,14 +380,20 @@ function unlockNavigation() {
 function handleCompleteAdding() {
     console.log('Button clicked - handleCompleteAdding called');
     
-    // Send API request to print to server terminal
+    // Disable button to prevent double-click
+    if (completeAddingButton) {
+        completeAddingButton.disabled = true;
+        completeAddingButton.textContent = 'Đang xử lý...';
+    }
+    
+    // Send API request to complete adding process
     fetch('/api/added-product', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            message: 'hoàn tất thêm hàng'
+            message: 'Nhân viên hoàn tất thêm hàng từ nút'
         })
     })
     .then(response => {
@@ -397,14 +403,30 @@ function handleCompleteAdding() {
     .then(data => {
         console.log('API response data:', data);
         if (data.success) {
-            console.log('Message printed to terminal successfully');
+            console.log('Complete adding successful. Waiting for WebSocket event to unlock navigation...');
+            showRFIDIndicator('Đang lưu số lượng sản phẩm...', 'info');
+            
+            // Navigation will be unlocked by WebSocket event 'max_quantity_added_notification'
+            // from rfid_state_monitor.py when it detects rfid_state changed to 0
         } else {
-            console.error('Failed to print to terminal:', data.message);
+            console.error('Failed to complete adding:', data.message);
+            showRFIDIndicator('Lỗi: ' + data.message, 'warning');
+            
+            // Re-enable button on error
+            if (completeAddingButton) {
+                completeAddingButton.disabled = false;
+                completeAddingButton.textContent = 'Hoàn tất thêm hàng';
+            }
         }
     })
     .catch(error => {
-        console.error('Error printing to terminal:', error);
+        console.error('Error completing adding:', error);
+        showRFIDIndicator('Lỗi kết nối. Vui lòng thử lại.', 'warning');
+        
+        // Re-enable button on error
+        if (completeAddingButton) {
+            completeAddingButton.disabled = false;
+            completeAddingButton.textContent = 'Hoàn tất thêm hàng';
+        }
     });
-    
-    unlockNavigation();
 }

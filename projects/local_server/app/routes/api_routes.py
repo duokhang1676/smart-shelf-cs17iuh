@@ -771,25 +771,30 @@ def print_to_terminal():
     
 @api_bp.route('/added-product', methods=['POST'])
 def added_products():
-    """Print message to server terminal"""
+    """Complete adding products - triggered by button click"""
     try:
         data = request.json
         message = data.get('message', '')
         
-        globals.set_rfid_state(0)  # Set RFID state back to 0 (added/idle)
+        # Set RFID state back to 0 (added/idle)
+        globals.set_rfid_state(0)
+        
+        # Set bool_rfid_devices to True to trigger the state monitor
+        globals.set_bool_rfid_devices(True)
+        
         if message:
-            print(message)  # Print to terminal
-            return jsonify({
-                'success': True,
-                'message': f'Printed to terminal: {message}'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'No message provided'
-            }), 400
+            print(f"[SHELF] {message}")  # Print to terminal
+        
+        print(f"[SHELF] Complete adding: rfid_state=0, bool_rfid_devices=True")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Complete adding products. State updated.',
+            'rfid_state': 0
+        })
             
     except Exception as e:
+        print(f"[ERROR] Failed to complete adding: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @api_bp.route('/slideshow-images/manage', methods=['GET', 'POST', 'DELETE'])
