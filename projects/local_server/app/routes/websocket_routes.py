@@ -95,7 +95,7 @@ def register_websocket_handlers(socketio, get_cart_func):
         client_id = request.sid
         if client_id in connected_clients:
             connected_clients.remove(client_id)
-            print(f"Client {client_id} disconnected and removed from tracking")
+            # print(f"Client {client_id} disconnected and removed from tracking")
 
     @socketio.on('request_cart_update')
     def handle_cart_request():
@@ -610,7 +610,7 @@ def register_websocket_handlers(socketio, get_cart_func):
         """Handle slideshow page leave - stop tracking quantity changes"""
         from app.modules.quantity_change_monitor import set_slideshow_status
         set_slideshow_status(False)
-        print("User left slideshow page - quantity change tracking disabled")
+        # print("User left slideshow page - quantity change tracking disabled")
 
     # RFID State monitoring events
     @socketio.on('employee_adding_max_quantity')

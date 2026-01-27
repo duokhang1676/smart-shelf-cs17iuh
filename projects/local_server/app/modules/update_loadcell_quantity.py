@@ -132,10 +132,10 @@ def notification_handler_factory(device_name):
             globals.is_tracking = False
 
         print(f"[{device_name}] Received from {sender}: {list(data)}")
-        print("Verified Quantity:", globals.get_verified_quantity())
-        print("Current Loadcell Data:", new_data)
-        print("Taken Quantity:", taken_quantity_list)
-        print("Is Tracking:", globals.is_tracking)
+        # print("Verified Quantity:", globals.get_verified_quantity())
+        # print("Current Loadcell Data:", new_data)
+        # print("Taken Quantity:", taken_quantity_list)
+        # print("Is Tracking:", globals.is_tracking)
 
         # Emit WebSocket update immediately after calculating taken_quantity
         try:
@@ -171,7 +171,7 @@ def notification_handler_factory(device_name):
                 
                 # Emit the update with combo-applied cart
                 emit_loadcell_update(socketio_instance, taken_quantity_list, cart_with_combo)
-                print(f"WebSocket emitted: taken_quantity={taken_quantity_list}, cart_items={len(cart_with_combo)}")
+                # print(f"WebSocket emitted: taken_quantity={taken_quantity_list}, cart_items={len(cart_with_combo)}")
                 
                 # Also update app cart config for API consistency
                 try:
@@ -197,7 +197,7 @@ def notification_handler_factory(device_name):
                                 'quantity': qty
                             })
                     emit_loadcell_update(socketio_instance, taken_quantity_list, cart)
-                    print(f"Fallback WebSocket emitted: taken_quantity={taken_quantity_list}, cart={cart}")
+                    # print(f"Fallback WebSocket emitted: taken_quantity={taken_quantity_list}, cart={cart}")
             except Exception as fallback_e:
                 print(f"Fallback WebSocket emit error: {fallback_e}")
 
@@ -381,7 +381,7 @@ def send_data_to_devices(loop):
                         print(f"[{name}] Failed to queue RFID: {e}")
                     try:
                         future3.result(timeout=10)
-                        #print(f"[{name}] Queued product names: {products_name} to {CHAR_UUID_PRODUCT_NAME}")
+                        print(f"[{name}] Queued product names: {products_name} to {CHAR_UUID_PRODUCT_NAME}")
                     except Exception as e:
                         print(f"[{name}] Failed to queue product names: {e}")
                     try:
