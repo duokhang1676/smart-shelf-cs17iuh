@@ -58,7 +58,7 @@ class VietQRPaymentAPI:
         
         params = {
             "transaction_date_min": today,
-            "limit": 5
+            "limit": 50  # Increase to 50 to ensure we catch transactions even during high traffic
         }
         
         # Don't add account_number filter to get all transactions
@@ -78,14 +78,33 @@ class VietQRPaymentAPI:
             
             if data.get("messages", {}).get("success") is True:
                 transactions = data.get("transactions", [])
-                for tx in transactions:
+                
+                # Debug: Log number of transactions received
+                print(f"[SEPAY] Received {len(transactions)} transactions from API")
+                
+                # Sort by transaction_date DESC to check newest first
+                transactions_sorted = sorted(
+                    transactions, 
+                    key=lambda x: x.get("transaction_date", ""), 
+                    reverse=True
+                )
+                
+                for tx in transactions_sorted:
                     content = tx.get("transaction_content", "")
                     tx_date = tx.get("transaction_date", "")
                     tx_amount = float(tx.get("amount_in", 0))
                     
+                    # Debug: Log each transaction being checked
+                    if transactions_sorted.index(tx) < 3:  # Only log first 3 to avoid spam
+                        print(f"[SEPAY] Checking tx: date={tx_date}, amount={tx_amount}, content='{content[:50]}...'")
+                    
                     # Check if the transaction content contains order_id and is from today
                     if order_id and order_id in content and tx_date.startswith(today):
+                        print(f"[SEPAY] ✓ Match found! Order: {order_id}, Content: {content}")
                         return True, tx
+                
+                # If no match, log what we're looking for
+                print(f"[SEPAY] No match found. Looking for order_id='{order_id}' in today's transactions")
                                 
             return False, None
             

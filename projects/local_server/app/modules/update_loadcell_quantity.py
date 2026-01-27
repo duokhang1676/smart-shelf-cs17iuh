@@ -394,7 +394,7 @@ def send_data_to_devices(loop):
                         print(f"[{name}] Failed to queue RFID: {e}")
                     try:
                         future3.result(timeout=10)
-                        print(f"[{name}] Queued product names: {products_name} to {CHAR_UUID_PRODUCT_NAME}")
+                        #print(f"[{name}] Queued product names: {products_name} to {CHAR_UUID_PRODUCT_NAME}")
                     except Exception as e:
                         print(f"[{name}] Failed to queue product names: {e}")
                     try:
