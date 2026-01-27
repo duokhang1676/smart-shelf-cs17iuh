@@ -57,8 +57,7 @@ class VietQRPaymentAPI:
         today = datetime.now().strftime("%Y-%m-%d")
         
         params = {
-            "transaction_date_min": today,
-            "limit": 50  # Increase to 50 to ensure we catch transactions even during high traffic
+            "limit": 100  # Get more transactions, no date filter for immediate detection
         }
         
         # Don't add account_number filter to get all transactions
@@ -70,7 +69,7 @@ class VietQRPaymentAPI:
         }
         
         try:
-            response = requests.get(SEPAY_TRANSACTION_URL, headers=headers, params=params, timeout=5)
+            response = requests.get(SEPAY_TRANSACTION_URL, headers=headers, params=params, timeout=3)
             if response.status_code == 401:
                 return "unauthorized", None
             response.raise_for_status()

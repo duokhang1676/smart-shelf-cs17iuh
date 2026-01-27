@@ -35,6 +35,7 @@ from app.routes.payment_routes import payment_bp
 from app.routes.loadcell_routes import loadcell_bp
 from app.routes.debug_routes import debug_bp
 from app.routes.wifi_routes import wifi_bp
+from app.routes.webhook_routes import webhook_bp
 from app.routes.websocket_routes import register_websocket_handlers
 
 # Import utilities and modules
@@ -42,6 +43,7 @@ from app.modules import globals
 from app.modules import voice_command_monitor
 from app.modules import quantity_change_monitor
 from app.modules import rfid_state_monitor
+from app.modules import payment_webhook_listener
 from app.utils.database_utils import load_products_from_json
 from app.utils.loadcell_utils import (
     check_loadcell_error_codes, 
@@ -84,6 +86,10 @@ quantity_change_monitor.start_quantity_change_monitor()
 rfid_state_monitor.set_socketio(socketio)
 rfid_state_monitor.start_rfid_state_monitor()
 
+# Setup payment webhook listener with socketio instance and auto-start
+payment_webhook_listener.set_socketio(socketio)
+payment_webhook_listener.start_payment_webhook_listener()
+
 # Setup cleanup handlers
 def cleanup_voice_command_monitor():
     """Cleanup voice command monitor on app shutdown"""
@@ -121,6 +127,7 @@ app.register_blueprint(payment_bp)
 app.register_blueprint(loadcell_bp, url_prefix='/api')
 app.register_blueprint(debug_bp, url_prefix='/api')
 app.register_blueprint(wifi_bp)
+app.register_blueprint(webhook_bp, url_prefix='/webhook')
 
 def get_cart():
     """Helper function to get cart from app context"""
