@@ -136,8 +136,45 @@ def api_rfid_state():
 
 @api_bp.route('/products')
 def api_products():
-    cart = get_cart()
-    return jsonify(cart)
+    """Get current cart based on real-time taken_quantity and fresh product data"""
+    try:
+        # Get current taken quantities
+        taken_quantity = globals.get_taken_quantity()
+        
+        # Load fresh product data from database
+        from app.utils.database_utils import load_products_from_json
+        products = load_products_from_json()
+        
+        # Build cart from taken_quantity
+        cart = []
+        for i, qty in enumerate(taken_quantity):
+            if qty > 0 and i < len(products):
+                product = products[i]
+                cart.append({
+                    'position': i,
+                    'quantity': qty,
+                    'qty': qty,  # Legacy compatibility
+                    'product_id': product.get('product_id'),
+                    'product_name': product.get('product_name'),
+                    'price': product.get('price'),
+                    'img_url': product.get('img_url'),
+                    'weight': product.get('weight'),
+                    'max_quantity': product.get('max_quantity', 0)
+                })
+        
+        # Apply combo pricing if any
+        from app.utils.loadcell_utils import update_cart_with_combo_pricing
+        cart_with_combo, applied_combos = update_cart_with_combo_pricing(cart)
+        
+        # Update app config cache for consistency
+        current_app.config['cart'] = cart_with_combo
+        
+        return jsonify(cart_with_combo)
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to get products: {e}")
+        # Fallback to cached cart if error
+        return jsonify(get_cart())
 
 @api_bp.route('/cart/set', methods=['POST'])
 def set_cart_api():
