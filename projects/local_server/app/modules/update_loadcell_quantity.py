@@ -351,6 +351,19 @@ def send_data_to_devices(loop):
                         print(f"[{name}] Failed to queue: {e}")
             else: # Adding
                 globals.set_is_tracking(False)
+                
+                # Emit WebSocket event to reload shelf page for fresh cloud data
+                try:
+                    from app.utils.loadcell_ws_utils import get_socketio_instance
+                    socketio_instance = get_socketio_instance()
+                    if socketio_instance:
+                        socketio_instance.emit('reload_shelf_page', {
+                            'message': 'Reloading shelf to sync cloud data'
+                        })
+                        print("[RFID] Emitted reload_shelf_page event to frontend")
+                except Exception as e:
+                    print(f"[WARN] Could not emit reload_shelf_page: {e}")
+                
                 for name, dev in DEVICES.items():
                     if name == "Loadcell_1":
                         weight_of_one = globals.weight_of_one[:globals.LOADCELL_NUM_1]

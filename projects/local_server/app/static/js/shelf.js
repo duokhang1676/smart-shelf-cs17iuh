@@ -153,6 +153,13 @@ function initializeWebSocket() {
         // Unlock navigation after successful addition
         unlockNavigation();
     });
+
+    socket.on('reload_shelf_page', function(data) {
+        console.log('Reloading shelf page for cloud sync:', data.message);
+        
+        // Reload the page to fetch fresh data from cloud
+        window.location.reload();
+    });
 }
 
 /**
