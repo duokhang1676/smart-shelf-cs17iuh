@@ -381,8 +381,14 @@ function initWebSocket() {
         showNotification('success', 'Thành công', 
             data.message || 'Đã cập nhật số lượng sản phẩm.', {
             closeable: true,
-            duration: 3000
+            duration: 2000
         });
+        
+        // Reload cart page to show updated product quantities
+        console.log('Reloading cart page to show updated quantities...');
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000); // Wait 2 seconds to show success message before reload
     });
 
     // Error handling
