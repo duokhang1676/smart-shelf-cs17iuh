@@ -115,7 +115,7 @@ def notification_handler_factory(device_name):
             globals.set_loadcell_quantity(new_data)
 
         loadcell_error_indexes = [i + 1 for i, v in enumerate(globals.get_loadcell_quantity_snapshot()) if v == 200 or v == 222]
-        if loadcell_error_indexes:
+        if loadcell_error_indexes and globals.rfid_state != 1:  # Only warn when not in adding state
             loadcell_error_indexes_str = " và ngăn ".join(map(str, loadcell_error_indexes))
             text = "Cảnh báo sản phẩm đặt tại ngăn thứ " + loadcell_error_indexes_str + " không đúng. Vui lòng đặt sản phẩm lại đúng vị trí."
             speech_text(text)

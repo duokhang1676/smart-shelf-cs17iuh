@@ -64,7 +64,6 @@ def start_tracking_customer_behavior():
 
     ret, frame = cap.read()
     if ret:
-        threading.Thread(target=play_sound, args=(sound_file_path_1,)).start()
         # init the model (load weights)
         model(frame)
         threading.Thread(target=play_sound, args=(sound_file_path_2,)).start()
