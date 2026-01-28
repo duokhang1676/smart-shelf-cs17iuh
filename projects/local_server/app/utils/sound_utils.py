@@ -49,16 +49,42 @@ def play_sound(path):
     print(f"DEBUG play_sound: Attempting to play: {path}")
     print(f"DEBUG play_sound: File exists: {os.path.exists(path)}")
     
-    result = subprocess.run(
-        ["mpg123", "-q", "-a", "hw:Device,0", path],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    
-    if result.returncode != 0:
-        print(f"DEBUG play_sound ERROR: Return code: {result.returncode}")
-        print(f"DEBUG play_sound ERROR: stdout: {result.stdout}")
-        print(f"DEBUG play_sound ERROR: stderr: {result.stderr}")
-    else:
-        print(f"DEBUG play_sound: Sound played successfully")
+    try:
+        # Try with timeout to prevent blocking
+        result = subprocess.run(
+            ["mpg123", "-q", "-a", "hw:Device,0", path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=10  # 10 second timeout
+        )
+        
+        if result.returncode != 0:
+            print(f"DEBUG play_sound ERROR: Return code: {result.returncode}")
+            print(f"DEBUG play_sound ERROR: stdout: {result.stdout}")
+            print(f"DEBUG play_sound ERROR: stderr: {result.stderr}")
+        else:
+            print(f"DEBUG play_sound: Sound played successfully")
+    except subprocess.TimeoutExpired:
+        print(f"DEBUG play_sound ERROR: Command timed out after 10 seconds")
+        print(f"DEBUG play_sound: Trying without audio device specification...")
+        
+        # Fallback: try without specific audio device
+        try:
+            result = subprocess.run(
+                ["mpg123", "-q", path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                print(f"DEBUG play_sound: Sound played successfully (without device spec)")
+            else:
+                print(f"DEBUG play_sound ERROR: Fallback failed - {result.stderr}")
+        except Exception as e:
+            print(f"DEBUG play_sound ERROR: Fallback exception - {e}")
+    except FileNotFoundError:
+        print(f"DEBUG play_sound ERROR: mpg123 command not found")
+    except Exception as e:
+        print(f"DEBUG play_sound ERROR: Unexpected exception - {e}")
