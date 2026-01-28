@@ -628,6 +628,30 @@ function renderCart() {
         const attributes = document.createElement('div');
         attributes.className = 'product-attributes';
         
+        // Add price display (with discount support like shelf page)
+        const priceDiv = document.createElement('div');
+        priceDiv.className = 'product-price';
+        
+        // Check if product has discount or combo pricing
+        if (p.in_combo && p.original_price && p.original_price > p.price) {
+            // Combo pricing: show original price (crossed) and discounted price
+            priceDiv.innerHTML = `
+                <span class="original-price">${formatMoney(p.original_price)}₫</span>
+                <span class="discounted-price">${formatMoney(p.price)}₫</span>
+            `;
+        } else if (p.original_price && p.original_price > p.price) {
+            // Regular discount: show original price (crossed) and discounted price
+            priceDiv.innerHTML = `
+                <span class="original-price">${formatMoney(p.original_price)}₫</span>
+                <span class="discounted-price">${formatMoney(p.price)}₫</span>
+            `;
+        } else {
+            // No discount: show regular price
+            priceDiv.textContent = `${formatMoney(p.price)}₫`;
+        }
+        
+        attributes.appendChild(priceDiv);
+        
         const quantity = document.createElement('div');
         quantity.className = 'product-quantity';
         if (p.promotion_type === 'buy_x_get_y' && p.free_qty > 0) {
