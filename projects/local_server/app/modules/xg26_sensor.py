@@ -137,66 +137,65 @@ async def connect_and_monitor():
 
             print(f"Found xg26 sensor, attempting to connect (attempt {connection_retry_count + 1}/{max_connection_retries})...")
             
-            # Use longer timeout for connection
-            async with asyncio.timeout(30):  # 30 second timeout for connection
-                async with BleakClient(
-                    device, 
-                    disconnected_callback=lambda c: print("Disconnected xg26 sensor device."),
-                    timeout=30.0  # Explicit timeout for BleakClient
-                ) as client:
-                    print("✓ Connected to xg26 sensor device.")
-                    connection_retry_count = 0  # Reset retry count on successful connection
+            # Connect with explicit timeout (BleakClient handles timeout internally)
+            async with BleakClient(
+                device, 
+                disconnected_callback=lambda c: print("Disconnected xg26 sensor device."),
+                timeout=30.0  # 30 second timeout for connection
+            ) as client:
+                print("✓ Connected to xg26 sensor device.")
+                connection_retry_count = 0  # Reset retry count on successful connection
                     
-                    sound_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/connect-sensor.mp3"))
-                    threading.Thread(target=play_sound, args=(sound_file_path,), daemon=True).start()
-                    globals.set_imu_data_init(None)  # Reset IMU initial data on new connection
-                    
-                    # Enable notifications with retry
-                    for uuid, (label, _, _, is_notify) in CHAR_MAP.items():
-                        if is_notify:
-                            try:
-                                await client.start_notify(uuid, create_notify_handler(uuid))
-                                print(f"✓ Notifications enabled for {label}")
-                            except Exception as notify_error:
-                                print(f"⚠ Failed to enable notifications for {label}: {notify_error}")
-
-                    # Main read loop
-                    while client.is_connected:
+                sound_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/connect-sensor.mp3"))
+                threading.Thread(target=play_sound, args=(sound_file_path,), daemon=True).start()
+                globals.set_imu_data_init(None)  # Reset IMU initial data on new connection
+                
+                # Enable notifications with retry
+                for uuid, (label, _, _, is_notify) in CHAR_MAP.items():
+                    if is_notify:
                         try:
-                            for uuid, (label, fmt, scale, is_notify) in CHAR_MAP.items():
-                                if not is_notify:  # Only read non-notify characteristics
-                                    try:
-                                        data = await asyncio.wait_for(client.read_gatt_char(uuid), timeout=5.0)
-                                        if len(data) == struct.calcsize(fmt):
-                                            value = struct.unpack(fmt, data)[0] / scale
+                            await client.start_notify(uuid, create_notify_handler(uuid))
+                            print(f"✓ Notifications enabled for {label}")
+                        except Exception as notify_error:
+                            print(f"⚠ Failed to enable notifications for {label}: {notify_error}")
 
-                                            # Assign to global variable
-                                            if uuid == CHAR_UUID_PRESSURE:
-                                                globals.set_pressure(value)
-                                            elif uuid == CHAR_UUID_TEMPERATURE:
-                                                globals.set_temperature(value)
-                                            elif uuid == CHAR_UUID_HUMIDITY:
-                                                globals.set_humidity(value)
-                                            elif uuid == CHAR_UUID_LIGHT:
-                                                globals.set_light(value)
-                                            elif uuid == CHAR_UUID_SOUND:
-                                                globals.set_sound(value)
-                                            elif uuid == CHAR_UUID_MAGNETIC:
-                                                globals.set_magnetic(value)
-                                        else:
-                                            print(f"{label}: Invalid data length.")
-                                    except asyncio.TimeoutError:
-                                        print(f"{label}: Read timeout, skipping...")
-                                    except Exception as e:
-                                        print(f"{label}: Read error - {e}")
-                            
-                            await asyncio.sleep(5)  # Delay between reads
-                            
-                        except Exception as read_loop_error:
-                            print(f"Error in read loop: {read_loop_error}")
-                            await asyncio.sleep(2)
-                            if not client.is_connected:
-                                break
+                # Main read loop
+                while client.is_connected:
+                    try:
+                        for uuid, (label, fmt, scale, is_notify) in CHAR_MAP.items():
+                            if not is_notify:  # Only read non-notify characteristics
+                                try:
+                                    data = await asyncio.wait_for(client.read_gatt_char(uuid), timeout=5.0)
+                                    if len(data) == struct.calcsize(fmt):
+                                        value = struct.unpack(fmt, data)[0] / scale
+
+                                        # Assign to global variable
+                                        if uuid == CHAR_UUID_PRESSURE:
+                                            globals.set_pressure(value)
+                                        elif uuid == CHAR_UUID_TEMPERATURE:
+                                            globals.set_temperature(value)
+                                        elif uuid == CHAR_UUID_HUMIDITY:
+                                            globals.set_humidity(value)
+                                        elif uuid == CHAR_UUID_LIGHT:
+                                            globals.set_light(value)
+                                        elif uuid == CHAR_UUID_SOUND:
+                                            globals.set_sound(value)
+                                        elif uuid == CHAR_UUID_MAGNETIC:
+                                            globals.set_magnetic(value)
+                                    else:
+                                        print(f"{label}: Invalid data length.")
+                                except asyncio.TimeoutError:
+                                    print(f"{label}: Read timeout, skipping...")
+                                except Exception as e:
+                                    print(f"{label}: Read error - {e}")
+                        
+                        await asyncio.sleep(5)  # Delay between reads
+                        
+                    except Exception as read_loop_error:
+                        print(f"Error in read loop: {read_loop_error}")
+                        await asyncio.sleep(2)
+                        if not client.is_connected:
+                            break
 
         except asyncio.TimeoutError:
             connection_retry_count += 1
