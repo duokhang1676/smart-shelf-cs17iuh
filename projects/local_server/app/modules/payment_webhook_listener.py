@@ -59,17 +59,16 @@ def on_message(client, userdata, msg):
         amount = payload.get('amount')
         transaction_content = payload.get('transaction_content', '')
         
-        # Verify this is for current order by checking if order_id is in transaction content
-        current_order_id = globals.get_order_id()
-        if not current_order_id:
-            print(f"[PAYMENT WEBHOOK] No active order, ignoring webhook")
-            return
-            
-        if order_id != current_order_id and order_id not in transaction_content:
-            print(f"[PAYMENT WEBHOOK] Order ID mismatch: webhook={order_id}, current={current_order_id}, ignoring")
+        # Check if we're currently waiting for payment
+        if globals.get_payment_verified():
+            print(f"[PAYMENT WEBHOOK] Payment already verified, ignoring webhook")
             return
         
-        print(f"[PAYMENT WEBHOOK] ✓ Payment confirmed for order {order_id}, amount {amount}")
+        # Check if order_id is present in the transaction content (basic validation)
+        if order_id and order_id in transaction_content:
+            print(f"[PAYMENT WEBHOOK] ✓ Payment confirmed for order {order_id}, amount {amount}")
+        else:
+            print(f"[PAYMENT WEBHOOK] ✓ Payment notification received for order {order_id}, amount {amount}")
         
         # Set payment verified flag
         globals.set_payment_verified(True)

@@ -46,8 +46,8 @@ def speech_text(text):
     )
 
 def play_sound(path):
-    print(f"DEBUG play_sound: Attempting to play: {path}")
-    print(f"DEBUG play_sound: File exists: {os.path.exists(path)}")
+    # print(f"DEBUG play_sound: Attempting to play: {path}")
+    # print(f"DEBUG play_sound: File exists: {os.path.exists(path)}")
     
     try:
         # Use ALSA backend instead of JACK, and specify the audio device
@@ -60,11 +60,11 @@ def play_sound(path):
         )
         
         if result.returncode != 0:
-            print(f"DEBUG play_sound ERROR: Return code: {result.returncode}")
-            print(f"DEBUG play_sound ERROR: stderr: {result.stderr}")
+            # print(f"DEBUG play_sound ERROR: Return code: {result.returncode}")
+            # print(f"DEBUG play_sound ERROR: stderr: {result.stderr}")
             
             # Fallback: try with ALSA but default device
-            print(f"DEBUG play_sound: Trying with ALSA default device...")
+            # print(f"DEBUG play_sound: Trying with ALSA default device...")
             result = subprocess.run(
                 ["mpg123", "-q", "-o", "alsa", path],
                 stdout=subprocess.PIPE,
