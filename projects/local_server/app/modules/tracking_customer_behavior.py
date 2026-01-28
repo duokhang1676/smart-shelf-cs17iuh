@@ -86,7 +86,7 @@ def start_tracking_customer_behavior():
             print("Error: Can't read frame!")
             continue
     
-        results = model(frame)
+        results = model(frame, conf=0.3, verbose=False)
 
         person_detected = False
 

@@ -98,7 +98,7 @@ def load_combo_from_cloud():
                     "id":combo["_id"],
                     "name": combo["name"],
                     "desc": combo.get("description", ""),
-                    "img": "http://ducdatphat.id.vn:3000/" + combo.get("image", ""),
+                    "img": combo.get("image", ""),
                     "price": combo.get("price", 0),
                     "oldPrice": combo.get("oldPrice", 0),
                     "validFrom": combo.get("validFrom"),
