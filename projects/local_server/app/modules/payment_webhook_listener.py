@@ -19,22 +19,26 @@ Payment Webhook Listener - Subscribe to MQTT payment notifications from cloud we
 import os
 import json
 import threading
+from datetime import datetime
 from dotenv import load_dotenv
 import paho.mqtt.client as mqtt
 
 from app.modules import globals
 from app.utils.sound_utils import speech_text, play_sound
 from app.utils.string_utils import remove_accents
+from app.modules.cloud_sync import post_order_data_to_cloud
 
 load_dotenv()
 
-# Global socketio instance
+# Global socketio and app instances
 socketio_instance = None
+flask_app = None
 
-def set_socketio(socketio):
-    """Set the socketio instance for emitting events"""
-    global socketio_instance
+def set_socketio(socketio, app=None):
+    """Set the socketio instance and Flask app for emitting events"""
+    global socketio_instance, flask_app
     socketio_instance = socketio
+    flask_app = app
     print("[PAYMENT WEBHOOK] SocketIO instance set")
 
 def on_connect(client, userdata, flags, rc):
@@ -74,61 +78,131 @@ def on_message(client, userdata, msg):
         globals.set_payment_verified(True)
         print(f"[PAYMENT WEBHOOK] Payment verified flag set to True")
         
+        # Get cart info for building order data if Flask app is available
+        cart = []
+        if flask_app:
+            try:
+                with flask_app.app_context():
+                    from flask import current_app
+                    cart = current_app.config.get('cart', [])
+            except Exception as cart_error:
+                print(f"[PAYMENT WEBHOOK] Could not get cart: {cart_error}")
+        
+        # Build order data and order details (like polling does)
+        order_details = []
+        order_details_products_name = []
+        total_bill = 0
+        
+        for p in cart:
+            qty = p.get('qty', 0)
+            price = p.get('price', 0)
+            total_price = qty * price
+            
+            order_details_products_name.append(remove_accents(p.get('product_name', '')))
+            order_details.append({
+                'product_id': p.get('product_id', p.get('_id', '')),
+                'quantity': qty,
+                'price': price,
+                'total_price': total_price
+            })
+            total_bill += total_price
+        
+        shelf_id = os.getenv("SHELF_ID_CLOUD")
+        order_data = {
+            'status': 'paid',
+            'order_code': order_id,
+            'shelf_id': shelf_id,
+            'total_bill': total_bill if total_bill > 0 else amount,  # Use webhook amount if cart unavailable
+            'orderDetails': order_details
+        }
+        
+        print(f"[PAYMENT WEBHOOK] Payment successful! Order {order_id}, transaction: {payload.get('transaction_id', 'N/A')}")
+        
         # Emit WebSocket event to frontend if socketio is available
         if socketio_instance:
             try:
-                # Get Flask app instance and work within app context
-                from flask import current_app
+                socketio_instance.emit('payment_received', {
+                    'order_id': order_id,
+                    'transaction': payload,
+                    'success': True,
+                    'message': 'Thanh toán thành công!',
+                    'source': 'webhook_mqtt'
+                })
+                print(f"[PAYMENT WEBHOOK] Emitted payment_received event for order {order_id}")
                 
-                # Try to get app from socketio instance
-                app = getattr(socketio_instance, 'server', None)
-                if app:
-                    with app.app_context():
-                        cart = current_app.config.get('cart', [])
-                        
-                        socketio_instance.emit('payment_received', {
-                            'order_id': order_id,
-                            'transaction': payload,
-                            'success': True,
-                            'message': 'Thanh toán thành công!',
-                            'source': 'webhook_mqtt'
-                        })
-                        print(f"[PAYMENT WEBHOOK] Emitted payment_received event for order {order_id}")
-                        
-                        # Voice notification
-                        order_details_products_name = []
-                        for p in cart:
-                            order_details_products_name.append(remove_accents(p.get('product_name', '')))
-                        
-                        if order_details_products_name:
-                            products_names_str = ", ".join(order_details_products_name)
-                            text = f"Cảm ơn quý khách đã mua {products_names_str}. Chúc quý khách một ngày vui vẻ!"
-                            threading.Thread(target=speech_text, args=(text,), daemon=True).start()
-                        
-                        # Play success sound
-                        try:
-                            sound_file = os.path.abspath(os.path.join(
-                                os.path.dirname(__file__), 
-                                "../..", 
-                                "app/static/sounds/payment_successful.mp3"
-                            ))
-                            threading.Thread(target=play_sound, args=(sound_file,), daemon=True).start()
-                        except Exception as sound_error:
-                            print(f"[PAYMENT WEBHOOK] Sound play error: {sound_error}")
-                else:
-                    # Fallback: emit without app context
-                    socketio_instance.emit('payment_received', {
-                        'order_id': order_id,
-                        'transaction': payload,
-                        'success': True,
-                        'message': 'Thanh toán thành công!',
-                        'source': 'webhook_mqtt'
-                    })
-                    print(f"[PAYMENT WEBHOOK] Emitted payment_received event (no app context)")
-                    
             except Exception as emit_error:
                 print(f"[PAYMENT WEBHOOK] Error emitting event: {emit_error}")
-                # Continue anyway since payment_verified is already set
+                import traceback
+                traceback.print_exc()
+        
+        # Play success sound (ting.mp3 like polling)
+        try:
+            sound_file = os.path.abspath(os.path.join(
+                os.path.dirname(__file__), 
+                "../..", 
+                "app/static/sounds/ting.mp3"
+            ))
+            threading.Thread(target=play_sound, args=(sound_file,), daemon=True).start()
+        except Exception as sound_error:
+            print(f"[PAYMENT WEBHOOK] Sound play error: {sound_error}")
+        
+        # Voice notification with total amount (like polling)
+        total_price = order_data['total_bill']
+        threading.Thread(
+            target=speech_text, 
+            args=(f"Thanh toán thành công {total_price} đồng",), 
+            daemon=True
+        ).start()
+        
+        # Send order data to cloud
+        print("[PAYMENT WEBHOOK] Send order data to cloud")
+        print(order_data)
+        threading.Thread(target=post_order_data_to_cloud, args=(order_data,), daemon=True).start()
+        
+        # Print bill if requested
+        if globals.get_print_bill() and order_details:
+            print("[PAYMENT WEBHOOK] Printing bill...")
+            try:
+                def format_currency(amount):
+                    return f"{amount:,}".replace(',', '.')
+                
+                bill_file_path = os.path.abspath(os.path.join(
+                    os.path.dirname(__file__), 
+                    "../..", 
+                    "app/static/txt/bill.txt"
+                ))
+                
+                with open(bill_file_path, "w", encoding="utf-8") as f:
+                    f.write("       KỆ HÀNG CS17IUH        \n")
+                    f.write("                              \n")
+                    f.write("  Địa chi: 12 Nguyên Văn Bao, \n")
+                    f.write("  Phường Hạnh Thông, TP.HCM   \n")
+                    f.write("       SDT: 0356972399        \n")
+                    f.write(" ---------------------------- \n")
+                    f.write("       HÓA ĐƠN BÁN HÀNG       \n")
+                    f.write("                              \n")
+                    f.write(f" Mã HD    : {order_data['order_code']}\n")
+                    f.write(f" Kệ hàng  : CS17IUH-01 \n")
+                    f.write(f" Thời gian: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+                    f.write(" ---------------------------- \n")
+                    f.write("     SL     Giá bán   T.Tiên  \n")
+                    f.write(" ---------------------------- \n")
+
+                    for i, item in enumerate(order_details):
+                        f.write(f" {order_details_products_name[i]:<28} \n")
+                        f.write(f"     {item['quantity']:<7}{format_currency(item['price']):<10}{format_currency(item['total_price'])}\n")
+                    
+                    f.write("                              \n")
+                    f.write(" ---------------------------- \n")
+                    f.write(f" THANH TOÁN:      {format_currency(order_data['total_bill'])} VND \n")
+                    f.write(" ---------------------------- \n")
+                    f.write("                              \n")
+                    f.write("                              \n")
+                    f.write("       Cam ơn quý khách!      \n")
+
+                print(f"[PAYMENT WEBHOOK] Hóa đơn đã được lưu vào {bill_file_path}")
+            except Exception as bill_error:
+                print(f"[PAYMENT WEBHOOK] Error printing bill: {bill_error}")
         else:
             print("[PAYMENT WEBHOOK] SocketIO instance not available")
             

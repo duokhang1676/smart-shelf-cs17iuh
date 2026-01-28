@@ -87,7 +87,7 @@ rfid_state_monitor.set_socketio(socketio)
 rfid_state_monitor.start_rfid_state_monitor()
 
 # Setup payment webhook listener with socketio instance and auto-start
-payment_webhook_listener.set_socketio(socketio)
+payment_webhook_listener.set_socketio(socketio, app)
 payment_webhook_listener.start_payment_webhook_listener()
 
 # Setup cleanup handlers
