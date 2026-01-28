@@ -166,7 +166,7 @@ def notification_handler_factory(device_name):
                             'product_id': product.get('product_id'),
                             'product_name': product.get('product_name'),
                             'price': discounted_price,
-                            'original_price': original_price if discount > 0 else None,
+                            'original_price': original_price,  # Always store original
                             'discount': discount,
                             'img_url': product.get('img_url'),
                             'weight': product.get('weight')

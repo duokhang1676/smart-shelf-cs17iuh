@@ -964,15 +964,10 @@ function renderCartWithComboDisplay(cartItems) {
         const currentPrice = p.price;
         const hasDiscount = p.discount && p.discount > 0;
         
-        console.log('Product:', p.product_name);
-        console.log('  - Original Price:', originalPrice, typeof originalPrice);
-        console.log('  - Current Price:', currentPrice, typeof currentPrice);
-        console.log('  - Discount:', p.discount);
-        console.log('  - In Combo:', p.in_combo, typeof p.in_combo);
-        console.log('  - Has original_price?', p.hasOwnProperty('original_price'));
+        console.log('Product:', p.product_name, '- Discount:', p.discount, '- Original:', originalPrice, '- Current:', currentPrice);
         
         // Show crossed-out original price and discounted price if has discount or combo
-        if ((p.in_combo || hasDiscount) && p.original_price && originalPrice > currentPrice) {
+        if ((p.in_combo || hasDiscount) && originalPrice > currentPrice) {
             priceDiv.innerHTML = `
                 <span style="text-decoration: line-through; color: #999; font-size: 0.9em;">${formatMoney(originalPrice)} ₫</span>
                 <span style="color: #e74c3c; font-weight: bold; margin-left: 8px;">${formatMoney(currentPrice)} ₫</span>

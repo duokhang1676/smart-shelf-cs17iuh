@@ -193,7 +193,7 @@ def api_cart():
                     'product_id': product.get('product_id'),
                     'product_name': product.get('product_name'),
                     'price': discounted_price,  # Use discounted price
-                    'original_price': original_price if discount > 0 else None,  # Store original for display
+                    'original_price': original_price,  # Always store original for comparison
                     'discount': discount,
                     'img_url': product.get('img_url'),
                     'weight': product.get('weight'),
