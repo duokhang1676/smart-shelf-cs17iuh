@@ -46,8 +46,19 @@ def speech_text(text):
     )
 
 def play_sound(path):
-    subprocess.run(
+    print(f"DEBUG play_sound: Attempting to play: {path}")
+    print(f"DEBUG play_sound: File exists: {os.path.exists(path)}")
+    
+    result = subprocess.run(
         ["mpg123", "-q", "-a", "hw:Device,0", path],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
     )
+    
+    if result.returncode != 0:
+        print(f"DEBUG play_sound ERROR: Return code: {result.returncode}")
+        print(f"DEBUG play_sound ERROR: stdout: {result.stdout}")
+        print(f"DEBUG play_sound ERROR: stderr: {result.stderr}")
+    else:
+        print(f"DEBUG play_sound: Sound played successfully")
