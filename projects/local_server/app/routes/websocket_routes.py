@@ -241,15 +241,15 @@ def register_websocket_handlers(socketio, get_cart_func):
                         'remaining_time': remaining_time
                     })
                 
-                print(f'{monitoring_type} payment check #{check_count} for order {order_id}...')
+                # print(f'{monitoring_type} payment check #{check_count} for order {order_id}...')  # Commented out - webhook handles payment verification
                 
                 success, tx = VietQRPaymentAPI.check_sepay_payment(
                     SEPAY_AUTH_TOKEN, SEPAY_BANK_ACCOUNT_ID, total, add_info, order_id
                 )
                 
-                print(f'Check result: success={success}, tx_found={tx is not None}')
-                if tx:
-                    print(f'Transaction content: {tx.get("transaction_content", "N/A")}')
+                # print(f'Check result: success={success}, tx_found={tx is not None}')  # Commented out - webhook handles payment verification
+                # if tx:  # Commented out - webhook handles payment verification
+                #     print(f'Transaction content: {tx.get("transaction_content", "N/A")}')
                 
                 # Handle authorization issues
                 if success == "unauthorized":
