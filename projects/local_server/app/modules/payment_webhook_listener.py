@@ -89,12 +89,18 @@ def on_message(client, userdata, msg):
                 print(f"[PAYMENT WEBHOOK] Could not get cart: {cart_error}")
         
         # Build order data and order details (like polling does)
+        # IMPORTANT: Only include products with qty > 0 (actually purchased)
         order_details = []
         order_details_products_name = []
         total_bill = 0
         
         for p in cart:
             qty = p.get('qty', 0)
+            
+            # Skip products with zero quantity
+            if qty <= 0:
+                continue
+            
             price = p.get('price', 0)
             total_price = qty * price
             
