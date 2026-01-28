@@ -131,11 +131,15 @@ def start_tracking_customer_behavior():
         if not person_detected:
             print("⚠️  Warning: No person detected.")
             alert += 1
+            print(f"DEBUG: Alert counter = {alert}")  # Debug log
             if alert == 20:
+                print("DEBUG: Playing sound_file_path_3 (alert == 20)")  # Debug log
                 threading.Thread(target=play_sound, args=(sound_file_path_3,)).start()
             if alert == 60:
+                print("DEBUG: Playing sound_file_path_3 (alert == 60)")  # Debug log
                 threading.Thread(target=play_sound, args=(sound_file_path_3,)).start()
             if alert == 100:
+                print("DEBUG: Playing sound_file_path_4 (alert == 100)")  # Debug log
                 threading.Thread(target=play_sound, args=(sound_file_path_4,)).start()
                 globals.set_unpaid_customer_warning(True)
 
