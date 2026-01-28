@@ -50,40 +50,38 @@ def play_sound(path):
     print(f"DEBUG play_sound: File exists: {os.path.exists(path)}")
     
     try:
-        # Try with timeout to prevent blocking
+        # Use ALSA backend instead of JACK, and specify the audio device
         result = subprocess.run(
             ["mpg123", "-q", "-a", "hw:Device,0", path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=10  # 10 second timeout
+            timeout=10
         )
         
         if result.returncode != 0:
             print(f"DEBUG play_sound ERROR: Return code: {result.returncode}")
-            print(f"DEBUG play_sound ERROR: stdout: {result.stdout}")
             print(f"DEBUG play_sound ERROR: stderr: {result.stderr}")
-        else:
-            print(f"DEBUG play_sound: Sound played successfully")
-    except subprocess.TimeoutExpired:
-        print(f"DEBUG play_sound ERROR: Command timed out after 10 seconds")
-        print(f"DEBUG play_sound: Trying without audio device specification...")
-        
-        # Fallback: try without specific audio device
-        try:
+            
+            # Fallback: try with ALSA but default device
+            print(f"DEBUG play_sound: Trying with ALSA default device...")
             result = subprocess.run(
-                ["mpg123", "-q", path],
+                ["mpg123", "-q", "-o", "alsa", path],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
                 timeout=10
             )
+            
             if result.returncode == 0:
-                print(f"DEBUG play_sound: Sound played successfully (without device spec)")
+                print(f"DEBUG play_sound: Sound played successfully (ALSA default)")
             else:
-                print(f"DEBUG play_sound ERROR: Fallback failed - {result.stderr}")
-        except Exception as e:
-            print(f"DEBUG play_sound ERROR: Fallback exception - {e}")
+                print(f"DEBUG play_sound ERROR: ALSA default failed - {result.stderr}")
+        else:
+            print(f"DEBUG play_sound: Sound played successfully")
+            
+    except subprocess.TimeoutExpired:
+        print(f"DEBUG play_sound ERROR: Command timed out after 10 seconds")
     except FileNotFoundError:
         print(f"DEBUG play_sound ERROR: mpg123 command not found")
     except Exception as e:

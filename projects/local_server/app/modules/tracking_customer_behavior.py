@@ -27,7 +27,8 @@ def start_tracking_customer_behavior():
     customer_frame = None
     sound_file_path_1 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/camera-connected.mp3"))
     sound_file_path_2 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/init-model-success.mp3"))
-    sound_file_path_3 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/unpaid_warning.mp3"))
+    # TEMP FIX: Use warning.mp3 instead of unpaid_warning.mp3 since unpaid_warning.mp3 has compatibility issues
+    sound_file_path_3 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/warning.mp3"))
     sound_file_path_4 = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/warning-2.mp3"))
     frame_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame/frame.jpg"))
     frame_box_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame/frame_box.jpg"))
