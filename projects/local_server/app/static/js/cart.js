@@ -957,12 +957,23 @@ function renderCartWithComboDisplay(cartItems) {
         quantity.className = 'product-quantity';
         quantity.innerHTML = `Số lượng: ${p.qty}`;
         
-        // Add price display (always show original price)
+        // Add price display with discount support
         const priceDiv = document.createElement('div');
         priceDiv.className = 'product-price';
         const originalPrice = p.original_price || p.price;
-        console.log('Product:', p.product_name, 'Original Price:', originalPrice, 'Current Price:', p.price);
-        priceDiv.innerHTML = `${formatMoney(originalPrice)} ₫`;
+        const currentPrice = p.price;
+        
+        console.log('Product:', p.product_name, 'Original Price:', originalPrice, 'Current Price:', currentPrice, 'In Combo:', p.in_combo);
+        
+        // Show crossed-out original price and discounted price if in combo
+        if (p.in_combo && originalPrice !== currentPrice) {
+            priceDiv.innerHTML = `
+                <span style="text-decoration: line-through; color: #999; font-size: 0.9em;">${formatMoney(originalPrice)} ₫</span>
+                <span style="color: #e74c3c; font-weight: bold; margin-left: 8px;">${formatMoney(currentPrice)} ₫</span>
+            `;
+        } else {
+            priceDiv.innerHTML = `${formatMoney(currentPrice)} ₫`;
+        }
         
         // Add combo badge
         if (p.in_combo) {
