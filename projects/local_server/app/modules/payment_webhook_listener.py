@@ -57,11 +57,16 @@ def on_message(client, userdata, msg):
         # Extract payment info
         order_id = payload.get('order_id')
         amount = payload.get('amount')
-        shelf_id = payload.get('shelf_id')
+        transaction_content = payload.get('transaction_content', '')
         
-        # Verify this notification is for current shelf
-        if shelf_id != os.getenv("SHELF_ID"):
-            print(f"[PAYMENT WEBHOOK] Notification for different shelf: {shelf_id}, ignoring")
+        # Verify this is for current order by checking if order_id is in transaction content
+        current_order_id = globals.get_order_id()
+        if not current_order_id:
+            print(f"[PAYMENT WEBHOOK] No active order, ignoring webhook")
+            return
+            
+        if order_id != current_order_id and order_id not in transaction_content:
+            print(f"[PAYMENT WEBHOOK] Order ID mismatch: webhook={order_id}, current={current_order_id}, ignoring")
             return
         
         print(f"[PAYMENT WEBHOOK] ✓ Payment confirmed for order {order_id}, amount {amount}")
