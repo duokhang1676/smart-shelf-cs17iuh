@@ -20,22 +20,27 @@ from flask_socketio import emit
 
 
 def emit_loadcell_update(socketio, loadcell_data, cart):
-    """Emit loadcell update event to all connected clients"""
+    """Emit loadcell update event to all connected clients with combo pricing applied"""
     try:
-        from app.utils.loadcell_utils import get_error_codes_info
+        from app.utils.loadcell_utils import get_error_codes_info, update_cart_with_combo_pricing
+        
+        # Apply combo pricing to cart before emitting
+        cart_with_combos, applied_combos = update_cart_with_combo_pricing(cart)
         
         error_codes = get_error_codes_info()
         
         event_data = {
             'loadcell_data': loadcell_data,
             'taken_quantity': loadcell_data,  # Add this for compatibility
-            'cart': cart,
-            'error_codes': error_codes
+            'cart': cart_with_combos,  # Use cart with combo pricing applied
+            'error_codes': error_codes,
+            'applied_combos': applied_combos  # Include combo info
         }
         
         socketio.emit('loadcell_update', event_data)
         return True
     except Exception as e:
+        print(f"Error in emit_loadcell_update: {e}")
         return False
 
 
