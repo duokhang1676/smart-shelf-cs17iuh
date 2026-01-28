@@ -70,47 +70,65 @@ def on_message(client, userdata, msg):
         else:
             print(f"[PAYMENT WEBHOOK] ✓ Payment notification received for order {order_id}, amount {amount}")
         
-        # Set payment verified flag
+        # Set payment verified flag FIRST (most important step)
         globals.set_payment_verified(True)
+        print(f"[PAYMENT WEBHOOK] Payment verified flag set to True")
         
         # Emit WebSocket event to frontend if socketio is available
         if socketio_instance:
             try:
+                # Get Flask app instance and work within app context
                 from flask import current_app
-                cart = current_app.config.get('cart', [])
                 
-                socketio_instance.emit('payment_received', {
-                    'order_id': order_id,
-                    'transaction': payload,
-                    'success': True,
-                    'message': 'Thanh toán thành công!',
-                    'source': 'webhook_mqtt'
-                })
-                print(f"[PAYMENT WEBHOOK] Emitted payment_received event for order {order_id}")
-                
-                # Voice notification
-                order_details_products_name = []
-                for p in cart:
-                    order_details_products_name.append(remove_accents(p.get('product_name', '')))
-                
-                if order_details_products_name:
-                    products_names_str = ", ".join(order_details_products_name)
-                    text = f"Cảm ơn quý khách đã mua {products_names_str}. Chúc quý khách một ngày vui vẻ!"
-                    speech_text(text)
-                
-                # Play success sound
-                try:
-                    sound_file = os.path.abspath(os.path.join(
-                        os.path.dirname(__file__), 
-                        "../..", 
-                        "app/static/sounds/payment_successful.mp3"
-                    ))
-                    play_sound(sound_file)
-                except Exception as sound_error:
-                    print(f"[PAYMENT WEBHOOK] Sound play error: {sound_error}")
+                # Try to get app from socketio instance
+                app = getattr(socketio_instance, 'server', None)
+                if app:
+                    with app.app_context():
+                        cart = current_app.config.get('cart', [])
+                        
+                        socketio_instance.emit('payment_received', {
+                            'order_id': order_id,
+                            'transaction': payload,
+                            'success': True,
+                            'message': 'Thanh toán thành công!',
+                            'source': 'webhook_mqtt'
+                        })
+                        print(f"[PAYMENT WEBHOOK] Emitted payment_received event for order {order_id}")
+                        
+                        # Voice notification
+                        order_details_products_name = []
+                        for p in cart:
+                            order_details_products_name.append(remove_accents(p.get('product_name', '')))
+                        
+                        if order_details_products_name:
+                            products_names_str = ", ".join(order_details_products_name)
+                            text = f"Cảm ơn quý khách đã mua {products_names_str}. Chúc quý khách một ngày vui vẻ!"
+                            threading.Thread(target=speech_text, args=(text,), daemon=True).start()
+                        
+                        # Play success sound
+                        try:
+                            sound_file = os.path.abspath(os.path.join(
+                                os.path.dirname(__file__), 
+                                "../..", 
+                                "app/static/sounds/payment_successful.mp3"
+                            ))
+                            threading.Thread(target=play_sound, args=(sound_file,), daemon=True).start()
+                        except Exception as sound_error:
+                            print(f"[PAYMENT WEBHOOK] Sound play error: {sound_error}")
+                else:
+                    # Fallback: emit without app context
+                    socketio_instance.emit('payment_received', {
+                        'order_id': order_id,
+                        'transaction': payload,
+                        'success': True,
+                        'message': 'Thanh toán thành công!',
+                        'source': 'webhook_mqtt'
+                    })
+                    print(f"[PAYMENT WEBHOOK] Emitted payment_received event (no app context)")
                     
             except Exception as emit_error:
                 print(f"[PAYMENT WEBHOOK] Error emitting event: {emit_error}")
+                # Continue anyway since payment_verified is already set
         else:
             print("[PAYMENT WEBHOOK] SocketIO instance not available")
             
