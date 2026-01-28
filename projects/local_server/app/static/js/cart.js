@@ -925,6 +925,11 @@ function renderCartWithComboDisplay(cartItems) {
     if (orderSummary) orderSummary.style.display = 'block';
     
     cartItems.forEach((p, idx) => {
+        // Only display products with quantity > 0
+        if (!p.qty || p.qty <= 0) {
+            return;
+        }
+        
         const card = document.createElement('div');
         card.className = 'product-card';
         

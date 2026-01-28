@@ -45,7 +45,7 @@ int scale_weight = 525; // use Dasani 510ml to set scale
 
 // error threshold
 
-int error_threshold_weight_percent = 20; // weight can error 10%
+int error_threshold_weight_percent = 35; // weight can error 10%
 
 int loadcell_timeout_delay_threshold = 5;
 int error_weight_delay_threshold = 5;
@@ -312,9 +312,12 @@ SL_WEAK void app_init(void)
   // Check loadcell pin available
   check_loadcell_pin();
 
-// debug fix loadcell
-  last_quantity[1] = 255;
+
+// debug fix loadcell //////////////////////////////////////////////////////////////////////////////////////
+//  last_quantity[1] = 255;  // load cell 2
   last_quantity[5] = 255;
+  // debug fix loadcell //////////////////////////////////////////////////////////////////////////////////////
+
 
   GPIO_PinModeSet(BUTTON_PORT, BUTTON_PIN, gpioModeInputPullFilter, 1);
   // check button_0 pressed to config offset and scale
@@ -426,22 +429,23 @@ SL_WEAK void app_process_action(void)
 //                        offset[i] = offset[i] - offset_change;
 //                    }
 
-                }else{
-                    // Invalid (weight outlier)
-                    uint8_t current_error_code = 222;
-                    if (last_error_code[i] != current_error_code) {
-                        // Error type changed, reset counter
-                        error_weight_delay[i] = 0;
-                        last_error_code[i] = current_error_code;
-                    }
-                    error_weight_delay[i]++;
-                    quantity = last_quantity[i];
-                    if(error_weight_delay[i] >= error_weight_delay_threshold){
-                        printf("Weight %d invalid! (outlier): %d > %d or %d < %d\n",i+1,remainder,error_weight,remainder,(weight_of_one[i] - error_weight));
-                        quantity = 222;
-                        error_weight_flag[i] = true;
-                    }
                 }
+//              else{
+//                    // Invalid (weight outlier)
+//                    uint8_t current_error_code = 222;
+//                    if (last_error_code[i] != current_error_code) {
+//                        // Error type changed, reset counter
+//                        error_weight_delay[i] = 0;
+//                        last_error_code[i] = current_error_code;
+//                    }
+//                    error_weight_delay[i]++;
+//                    quantity = last_quantity[i];
+//                    if(error_weight_delay[i] >= error_weight_delay_threshold){
+//                        printf("Weight %d invalid! (outlier): %d > %d or %d < %d\n",i+1,remainder,error_weight,remainder,(weight_of_one[i] - error_weight));
+//                        quantity = 222;
+//                        error_weight_flag[i] = true;
+//                    }
+//                }
           }
     }
 
