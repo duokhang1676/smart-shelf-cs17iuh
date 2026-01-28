@@ -176,13 +176,25 @@ def api_cart():
         for i, qty in enumerate(taken_quantity):
             if qty > 0 and i < len(products):
                 product = products[i]
+                original_price = product.get('price', 0)
+                discount = product.get('discount', 0)
+                
+                # Calculate discounted price if discount exists
+                if discount > 0:
+                    discounted_price = original_price * (1 - discount / 100)
+                    discounted_price = round(discounted_price)  # Round to nearest integer
+                else:
+                    discounted_price = original_price
+                
                 cart.append({
                     'position': i,
                     'quantity': qty,
                     'qty': qty,  # Legacy compatibility
                     'product_id': product.get('product_id'),
                     'product_name': product.get('product_name'),
-                    'price': product.get('price'),
+                    'price': discounted_price,  # Use discounted price
+                    'original_price': original_price if discount > 0 else None,  # Store original for display
+                    'discount': discount,
                     'img_url': product.get('img_url'),
                     'weight': product.get('weight'),
                     'max_quantity': product.get('max_quantity', 0)

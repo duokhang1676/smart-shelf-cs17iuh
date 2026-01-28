@@ -150,12 +150,24 @@ def notification_handler_factory(device_name):
                 for i, qty in enumerate(taken_quantity_list):
                     if qty > 0 and i < len(products):
                         product = products[i]
+                        original_price = product.get('price', 0)
+                        discount = product.get('discount', 0)
+                        
+                        # Calculate discounted price if discount exists
+                        if discount > 0:
+                            discounted_price = original_price * (1 - discount / 100)
+                            discounted_price = round(discounted_price)
+                        else:
+                            discounted_price = original_price
+                        
                         cart.append({
                             'position': i,
                             'quantity': qty,
                             'product_id': product.get('product_id'),
                             'product_name': product.get('product_name'),
-                            'price': product.get('price'),
+                            'price': discounted_price,
+                            'original_price': original_price if discount > 0 else None,
+                            'discount': discount,
                             'img_url': product.get('img_url'),
                             'weight': product.get('weight')
                         })

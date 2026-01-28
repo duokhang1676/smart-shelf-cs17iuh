@@ -962,16 +962,17 @@ function renderCartWithComboDisplay(cartItems) {
         priceDiv.className = 'product-price';
         const originalPrice = p.original_price || p.price;
         const currentPrice = p.price;
+        const hasDiscount = p.discount && p.discount > 0;
         
         console.log('Product:', p.product_name);
         console.log('  - Original Price:', originalPrice, typeof originalPrice);
         console.log('  - Current Price:', currentPrice, typeof currentPrice);
+        console.log('  - Discount:', p.discount);
         console.log('  - In Combo:', p.in_combo, typeof p.in_combo);
         console.log('  - Has original_price?', p.hasOwnProperty('original_price'));
-        console.log('  - Full product:', p);
         
-        // Show crossed-out original price and discounted price if in combo
-        if (p.in_combo && p.original_price && originalPrice > currentPrice) {
+        // Show crossed-out original price and discounted price if has discount or combo
+        if ((p.in_combo || hasDiscount) && p.original_price && originalPrice > currentPrice) {
             priceDiv.innerHTML = `
                 <span style="text-decoration: line-through; color: #999; font-size: 0.9em;">${formatMoney(originalPrice)} ₫</span>
                 <span style="color: #e74c3c; font-weight: bold; margin-left: 8px;">${formatMoney(currentPrice)} ₫</span>
@@ -980,12 +981,18 @@ function renderCartWithComboDisplay(cartItems) {
             priceDiv.innerHTML = `${formatMoney(currentPrice)} ₫`;
         }
         
-        // Add combo badge
+        // Add combo badge or discount badge
         if (p.in_combo) {
             const comboBadge = document.createElement('div');
             comboBadge.className = 'combo-badge';
             comboBadge.textContent = 'COMBO';
             details.appendChild(comboBadge);
+        } else if (hasDiscount) {
+            const discountBadge = document.createElement('div');
+            discountBadge.className = 'combo-badge';
+            discountBadge.style.backgroundColor = '#ff9800';
+            discountBadge.textContent = `-${p.discount}%`;
+            details.appendChild(discountBadge);
         }
         
     details.appendChild(name);
