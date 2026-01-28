@@ -681,7 +681,7 @@ def apply_combos_to_cart():
         return jsonify({
             'success': True,
             'message': f'Applied {len(applied_combos)} combo(s) to cart',
-            'cart': updated_cart,
+            'cart_items': updated_cart,  # Changed from 'cart' to 'cart_items' to match frontend
             'applied_combos': applied_combos,
             'total_savings': breakdown['combo_savings'],
             'original_total': breakdown['subtotal'],
