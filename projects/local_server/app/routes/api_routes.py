@@ -654,7 +654,9 @@ def get_cart_combo_info():
 def apply_combos_to_cart():
     """Manually apply combo pricing to current cart"""
     try:
-        cart = get_cart()
+        # Get cart from request body instead of global cart
+        data = request.get_json()
+        cart = data.get('cart_items', []) if data else []
         
         if not cart:
             return jsonify({
@@ -667,14 +669,14 @@ def apply_combos_to_cart():
         updated_cart, applied_combos = detect_and_apply_combo_pricing(cart)
         total, breakdown = calculate_cart_total_with_combos(cart)
         
-        # Update cart in app config
-        set_cart(updated_cart)
+        # Don't update global cart - just return the combo-applied cart
+        # set_cart(updated_cart)
         
-        # Emit WebSocket update
-        socketio = current_app.extensions.get('socketio')
-        if socketio:
-            from app.utils.websocket_utils import emit_loadcell_update
-            emit_loadcell_update(socketio, globals.loadcell_quantity, updated_cart)
+        # Don't emit WebSocket update - this is just a calculation endpoint
+        # socketio = current_app.extensions.get('socketio')
+        # if socketio:
+        #     from app.utils.websocket_utils import emit_loadcell_update
+        #     emit_loadcell_update(socketio, globals.loadcell_quantity, updated_cart)
         
         return jsonify({
             'success': True,
