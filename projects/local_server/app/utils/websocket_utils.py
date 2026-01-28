@@ -23,6 +23,13 @@ def emit_loadcell_update(socketio, loadcell_data, cart):
     """Emit loadcell update event to all connected clients with combo pricing applied"""
     try:
         from app.utils.loadcell_utils import get_error_codes_info, update_cart_with_combo_pricing
+        import numpy as np
+        
+        # Convert numpy array to list for JSON serialization
+        if isinstance(loadcell_data, np.ndarray):
+            loadcell_data_list = loadcell_data.tolist()
+        else:
+            loadcell_data_list = loadcell_data if isinstance(loadcell_data, list) else list(loadcell_data)
         
         # Apply combo pricing to cart before emitting
         cart_with_combos, applied_combos = update_cart_with_combo_pricing(cart)
@@ -30,8 +37,8 @@ def emit_loadcell_update(socketio, loadcell_data, cart):
         error_codes = get_error_codes_info()
         
         event_data = {
-            'loadcell_data': loadcell_data,
-            'taken_quantity': loadcell_data,  # Add this for compatibility
+            'loadcell_data': loadcell_data_list,
+            'taken_quantity': loadcell_data_list,  # Add this for compatibility
             'cart': cart_with_combos,  # Use cart with combo pricing applied
             'error_codes': error_codes,
             'applied_combos': applied_combos  # Include combo info
@@ -41,6 +48,8 @@ def emit_loadcell_update(socketio, loadcell_data, cart):
         return True
     except Exception as e:
         print(f"Error in emit_loadcell_update: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
