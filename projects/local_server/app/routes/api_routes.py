@@ -136,7 +136,7 @@ def api_rfid_state():
 
 @api_bp.route('/products')
 def api_products():
-    """Get all products with their current taken_quantity"""
+    """Get all products with their current taken_quantity and discount info"""
     try:
         # Get current taken quantities
         taken_quantity = globals.get_taken_quantity()
@@ -145,12 +145,24 @@ def api_products():
         from app.utils.database_utils import load_products_from_json
         products = load_products_from_json()
         
-        # Merge taken_quantity into products as 'qty' field
+        # Merge taken_quantity and calculate discount pricing
         for i, product in enumerate(products):
             if i < len(taken_quantity):
                 product['qty'] = taken_quantity[i]
             else:
                 product['qty'] = 0
+            
+            # Calculate discounted price if discount exists
+            original_price = product.get('price', 0)
+            discount = product.get('discount', 0)
+            
+            if discount > 0:
+                discounted_price = original_price * (1 - discount / 100)
+                discounted_price = round(discounted_price)  # Round to nearest integer
+                product['original_price'] = original_price  # Store original price
+                product['price'] = discounted_price  # Update with discounted price
+            else:
+                product['original_price'] = original_price  # Store same as price if no discount
         
         return jsonify(products)
         

@@ -632,14 +632,21 @@ function renderCart() {
         const priceDiv = document.createElement('div');
         priceDiv.className = 'product-price';
         
-        // Check if product has discount or combo pricing
-        if (p.in_combo && p.original_price && p.original_price > p.price) {
+        // Debug logging
+        console.log(`Product: ${p.product_name}, discount: ${p.discount}, original_price: ${p.original_price}, price: ${p.price}`);
+        
+        // Check if product has discount (percentage-based) or combo pricing
+        const hasDiscount = p.discount && p.discount > 0;
+        const hasComboDiscount = p.in_combo && p.original_price && p.original_price > p.price;
+        const hasPriceReduction = p.original_price && p.original_price > p.price;
+        
+        if (hasComboDiscount) {
             // Combo pricing: show original price (crossed) and discounted price
             priceDiv.innerHTML = `
                 <span class="original-price">${formatMoney(p.original_price)}₫</span>
                 <span class="discounted-price">${formatMoney(p.price)}₫</span>
             `;
-        } else if (p.original_price && p.original_price > p.price) {
+        } else if (hasDiscount || hasPriceReduction) {
             // Regular discount: show original price (crossed) and discounted price
             priceDiv.innerHTML = `
                 <span class="original-price">${formatMoney(p.original_price)}₫</span>
