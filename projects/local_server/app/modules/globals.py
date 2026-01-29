@@ -63,7 +63,20 @@ def load_weight_of_one(products_data):
     return [int(p["weight"] / 3) for p in products_data]
 
 def load_products_price(products_data):
-    return [int(p["price"] / 1000) for p in products_data]
+    """Calculate product prices with discount applied"""
+    prices = []
+    for p in products_data:
+        original_price = p["price"]
+        discount = p.get("discount", 0)
+        
+        # Apply discount if exists
+        if discount > 0:
+            discounted_price = original_price * (1 - discount / 100)
+            prices.append(int(discounted_price / 1000))
+        else:
+            prices.append(int(original_price / 1000))
+    
+    return prices
 
 def load_products_name(products_data):
     products_name = [
