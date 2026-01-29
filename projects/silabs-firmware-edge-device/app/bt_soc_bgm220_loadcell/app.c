@@ -62,6 +62,7 @@ int product_price[LOADCELL_NUM] = {0};
 int8_t verified_quantity[LOADCELL_NUM] = {0};
 
 uint8_t last_quantity[LOADCELL_NUM] = {0}; // Save last loadcell value
+uint8_t previous_quantity[LOADCELL_NUM] = {0}; // Save previous read value for double-check
 
 bool adding_products = false; // Check adding product state
 
@@ -450,10 +451,22 @@ SL_WEAK void app_process_action(void)
     }
 
     int taken = verified_quantity[i] - quantity;
+    
+    // Chỉ cập nhật khi giá trị ổn định qua 2 lần đọc liên tiếp
     if (quantity != last_quantity[i]) {
-      last_quantity[i] = quantity;
-      changed = true;
-      changed_index[i] = true; // Mark this loadcell as changed
+      // Nếu giá trị mới giống với giá trị vòng lặp trước -> xác nhận thay đổi
+      if (quantity == previous_quantity[i]) {
+        last_quantity[i] = quantity;
+        changed = true;
+        changed_index[i] = true; // Mark this loadcell as changed
+        printf("Loadcell %d confirmed change: %d (verified after 2 reads)\n", i+1, quantity);
+      } else {
+        // Giá trị khác, lưu lại để so sánh vòng sau
+        previous_quantity[i] = quantity;
+      }
+    } else {
+      // Giá trị không đổi, reset previous
+      previous_quantity[i] = quantity;
     }
 
 //    Debug
@@ -504,5 +517,5 @@ SL_WEAK void app_process_action(void)
         printf(" ]\n");
       }
   }
-  sl_sleeptimer_delay_millisecond(1000);
+  sl_sleeptimer_delay_millisecond(800);
 }
