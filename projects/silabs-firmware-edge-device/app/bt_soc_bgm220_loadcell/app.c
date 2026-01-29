@@ -123,7 +123,7 @@ void set_offset(void){
      }
      CORE_DECLARE_IRQ_STATE;
      CORE_ENTER_CRITICAL();
-     int32_t raw = hx711_read_filtered(&hx711_sensors[i]);
+     int32_t raw = hx711_read(&hx711_sensors[i]);
      if (raw < 0)
        raw = - raw;
      printf("Offset %d: %ld\n",i+1, raw);
@@ -143,7 +143,7 @@ void set_scale_array(){
       }
       CORE_DECLARE_IRQ_STATE;
       CORE_ENTER_CRITICAL();
-      int32_t raw = hx711_read_filtered(&hx711_sensors[i]);
+      int32_t raw = hx711_read(&hx711_sensors[i]);
       if(raw < 0)
         raw = - raw;
       CORE_EXIT_CRITICAL();
@@ -314,7 +314,7 @@ SL_WEAK void app_init(void)
 
 
 // debug fix loadcell //////////////////////////////////////////////////////////////////////////////////////
-  last_quantity[1] = 255;  // load cell 2
+//  last_quantity[1] = 255;  // load cell 2
   last_quantity[5] = 255;
   // debug fix loadcell //////////////////////////////////////////////////////////////////////////////////////
 
@@ -357,12 +357,13 @@ SL_WEAK void app_process_action(void)
 
       CORE_DECLARE_IRQ_STATE;
       CORE_ENTER_CRITICAL();  // Disable interrupts
-      int32_t raw = hx711_read_filtered(&hx711_sensors[i]);
+      int32_t raw = hx711_read(&hx711_sensors[i]);
+      if(raw<0)
+        raw = - raw;
       CORE_EXIT_CRITICAL();   // Re-enable interrupts
 
-    // Kiểm tra timeout hoặc lỗi đọc
-    if (raw == -1 || raw == 0) {
-      printf("Loadcell %d isn't ready (timeout/error): raw = %ld\n", i + 1, raw);
+    if (raw == 0 || raw == 1) { // delay for timeout
+      printf("Loadcell %d isn't ready (timeout): raw = %ld\n", i + 1,raw);
       loadcell_timeout_delay[i]++;
       if(loadcell_timeout_delay[i] >= loadcell_timeout_delay_threshold){
           last_quantity[i] = 255; // error flag
@@ -371,11 +372,6 @@ SL_WEAK void app_process_action(void)
       }
       continue;
     }
-    
-    // Xử lý giá trị âm (chuyển thành dương)
-    if(raw < 0)
-      raw = - raw;
-      
     loadcell_timeout_delay[i] = 0;
 
     int weight = (raw - offset[i]) / scale[i];
