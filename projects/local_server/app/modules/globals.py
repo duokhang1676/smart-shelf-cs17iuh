@@ -139,8 +139,8 @@ products_name_decimal, products_name_char_count = load_products_name_decimal(pro
 
 voice_command = None
 
-threatshold_imu_lean = 50
-threatshold_imu_shake = 90
+threatshold_imu_lean = 40
+threatshold_imu_shake = 70
 imu_data_init = None
 shelf_lean = False
 shelf_shake = False
