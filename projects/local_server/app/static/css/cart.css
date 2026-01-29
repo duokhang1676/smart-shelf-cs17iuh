@@ -187,6 +187,29 @@ h1 {
     text-align: left;
     flex-shrink: 0;
     min-width: 6.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+/* Original price styling for discounted products */
+.product-price .original-price {
+    font-size: 0.9em;
+    color: #999;
+    text-decoration: line-through;
+    font-weight: normal;
+}
+
+/* Discounted price styling */
+.product-price .discounted-price {
+    font-size: 1.1em;
+    color: #27ae60;
+    font-weight: bold;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
 }
 
 .product-attributes {
