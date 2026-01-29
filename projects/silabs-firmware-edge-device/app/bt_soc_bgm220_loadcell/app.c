@@ -123,7 +123,7 @@ void set_offset(void){
      }
      CORE_DECLARE_IRQ_STATE;
      CORE_ENTER_CRITICAL();
-     int32_t raw = hx711_read(&hx711_sensors[i]);
+     int32_t raw = hx711_read_filtered(&hx711_sensors[i]);
      if (raw < 0)
        raw = - raw;
      printf("Offset %d: %ld\n",i+1, raw);
@@ -143,7 +143,7 @@ void set_scale_array(){
       }
       CORE_DECLARE_IRQ_STATE;
       CORE_ENTER_CRITICAL();
-      int32_t raw = hx711_read(&hx711_sensors[i]);
+      int32_t raw = hx711_read_filtered(&hx711_sensors[i]);
       if(raw < 0)
         raw = - raw;
       CORE_EXIT_CRITICAL();
@@ -275,7 +275,7 @@ void lcd_show(){
       // Hiển thị tên sản phẩm
       lcd_print_centered(0, product_name[i]);
 
-      // Hiển thị giá
+      // Hiển thị giá 
       char buffer[20];
       format_number_with_commas(product_price[i], buffer, sizeof(buffer));
       strcat(buffer, "d");
@@ -357,13 +357,12 @@ SL_WEAK void app_process_action(void)
 
       CORE_DECLARE_IRQ_STATE;
       CORE_ENTER_CRITICAL();  // Disable interrupts
-      int32_t raw = hx711_read(&hx711_sensors[i]);
-      if(raw<0)
-        raw = - raw;
+      int32_t raw = hx711_read_filtered(&hx711_sensors[i]);
       CORE_EXIT_CRITICAL();   // Re-enable interrupts
 
-    if (raw == 0 || raw == 1) { // delay for timeout
-      printf("Loadcell %d isn't ready (timeout): raw = %ld\n", i + 1,raw);
+    // Kiểm tra timeout hoặc lỗi đọc
+    if (raw == -1 || raw == 0) {
+      printf("Loadcell %d isn't ready (timeout/error): raw = %ld\n", i + 1, raw);
       loadcell_timeout_delay[i]++;
       if(loadcell_timeout_delay[i] >= loadcell_timeout_delay_threshold){
           last_quantity[i] = 255; // error flag
@@ -372,6 +371,11 @@ SL_WEAK void app_process_action(void)
       }
       continue;
     }
+    
+    // Xử lý giá trị âm (chuyển thành dương)
+    if(raw < 0)
+      raw = - raw;
+      
     loadcell_timeout_delay[i] = 0;
 
     int weight = (raw - offset[i]) / scale[i];

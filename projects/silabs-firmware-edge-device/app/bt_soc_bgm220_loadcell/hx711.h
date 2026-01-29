@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #define LOADCELL_NUM 8
+#define FILTER_SAMPLES 7  // Số lượng mẫu để lọc (nên dùng số lẻ)
 
 typedef struct {
   GPIO_Port_TypeDef data_port;
@@ -34,6 +35,7 @@ void hx711_gpio_init(void);
 bool hx711_read_data_pin(HX711_t *sensor);
 void hx711_pulse_clock(void);
 int32_t hx711_read(HX711_t *sensor);
+int32_t hx711_read_filtered(HX711_t *sensor);
 bool is_floating_pin(GPIO_Port_TypeDef port, uint8_t pin);
 
 #endif // HX711_H
