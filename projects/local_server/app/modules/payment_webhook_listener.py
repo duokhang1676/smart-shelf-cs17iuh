@@ -69,17 +69,15 @@ def on_message(client, userdata, msg):
             return
         
         # Check if order_id is present in the transaction content (basic validation)
-        if order_id and order_id in transaction_content:
-            print(f"[PAYMENT WEBHOOK] ✓ Payment confirmed for order {order_id}, amount {amount}")
-        else:
-            print(f"[PAYMENT WEBHOOK] ✓ Payment notification received for order {order_id}, amount {amount}")
+        if not order_id or order_id not in transaction_content:
+            print(f"[PAYMENT WEBHOOK] ✗ Invalid order_id or transaction content mismatch")
+            return
         
-        # Set payment verified flag FIRST (most important step)
-        globals.set_payment_verified(True)
-        print(f"[PAYMENT WEBHOOK] Payment verified flag set to True")
+        print(f"[PAYMENT WEBHOOK] Processing payment for order {order_id}, amount {amount}")
         
         # Get cart info for building order data if Flask app is available
         cart = []
+        total_bill = 0
         if flask_app:
             try:
                 with flask_app.app_context():
@@ -92,7 +90,6 @@ def on_message(client, userdata, msg):
         # IMPORTANT: Only include products with qty > 0 (actually purchased)
         order_details = []
         order_details_products_name = []
-        total_bill = 0
         
         for p in cart:
             qty = p.get('qty', 0)
@@ -112,6 +109,23 @@ def on_message(client, userdata, msg):
                 'total_price': total_price
             })
             total_bill += total_price
+        
+        # CRITICAL: Verify amount matches total_bill
+        if total_bill > 0:
+            if amount < total_bill:
+                print(f"[PAYMENT WEBHOOK] ✗ PAYMENT REJECTED - Amount mismatch!")
+                print(f"[PAYMENT WEBHOOK]   Received: {amount} VND")
+                print(f"[PAYMENT WEBHOOK]   Expected: {total_bill} VND")
+                print(f"[PAYMENT WEBHOOK]   Difference: {total_bill - amount} VND short")
+                # Do NOT set payment_verified flag
+                # Do NOT emit success event
+                return
+            else:
+                print(f"[PAYMENT WEBHOOK] ✓ Payment amount verified: {amount} >= {total_bill}")
+        
+        # Set payment verified flag ONLY after amount verification
+        globals.set_payment_verified(True)
+        print(f"[PAYMENT WEBHOOK] Payment verified flag set to True")
         
         shelf_id = os.getenv("SHELF_ID_CLOUD")
         order_data = {
