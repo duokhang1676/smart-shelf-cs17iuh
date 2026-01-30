@@ -122,9 +122,6 @@ def start_tracking_customer_behavior():
                             cv2.imwrite(frame_box_file_path, customer_frame_box)
                         break  # Only process first person in ROI
                     else:
-                        if customer_frame is None:
-                            # cv2.imwrite(frame_file_path, frame)
-                            cv2.imwrite(frame_box_file_path, frame)
                         print(f"[OUTSIDE ROI] Person detected at ({int(cx)}, {int(cy)})")
             
             if person_detected:
@@ -175,7 +172,9 @@ def start_tracking_customer_behavior():
                     'total_bill': total_bill,
                     'orderDetails': order_details
                 }
-                
+                #
+                if customer_frame is None:
+                    cv2.imwrite(frame_box_file_path, frame)
                 # Try to post order data to cloud with error handling
                 try:
                     print(f"Attempting to send unpaid order {order_id} to cloud...")

@@ -37,9 +37,9 @@ def api_orders():
     products = data.get('products', [])
     total = data.get('total', 0)
     
-    # Generate order ID with format: OD + 10 digits from time.time()
+    # Generate order ID with format: HD + 10 digits from time.time()
     current_time = int(time.time())
-    order_id = f"OD{str(current_time)[-10:]}"
+    order_id = f"HD{str(current_time)[-10:]}"
     
     # Return immediately without any heavy processing
     return jsonify({
