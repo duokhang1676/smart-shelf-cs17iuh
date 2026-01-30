@@ -379,7 +379,20 @@ def process_cart():
                 ]
             }), 200  # Return 200 instead of 400 for empty cart
         
-        # Apply combo pricing and calculate total
+        # First, apply individual discounts to all cart items
+        for item in cart:
+            original_price = item.get('original_price') or item.get('price', 0)
+            discount = item.get('discount', 0)
+            
+            # Apply discount if exists and price hasn't been discounted yet
+            if discount > 0 and item.get('price', 0) == original_price:
+                discounted_price = original_price * (1 - discount / 100)
+                discounted_price = round(discounted_price)
+                item['price'] = discounted_price
+                if 'original_price' not in item:
+                    item['original_price'] = original_price
+        
+        # Then apply combo pricing and calculate total
         updated_cart, applied_combos = detect_and_apply_combo_pricing(cart)
         total, breakdown = calculate_cart_total_with_combos(updated_cart)
         
