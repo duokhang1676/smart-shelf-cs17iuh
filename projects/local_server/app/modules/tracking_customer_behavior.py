@@ -156,11 +156,23 @@ def start_tracking_customer_behavior():
 
                 for p, qty in zip(globals.get_products_data(), globals.get_taken_quantity()):
                     if qty > 0:
-                        total_price = qty * p.get("price", 0)
+                        # Apply discount if exists
+                        original_price = p.get("price", 0)
+                        discount = p.get("discount", 0)
+                        
+                        if discount > 0:
+                            # Calculate discounted price
+                            discounted_price = original_price * (1 - discount / 100)
+                            discounted_price = round(discounted_price)
+                        else:
+                            discounted_price = original_price
+                        
+                        total_price = qty * discounted_price
+                        
                         order_details.append({
                             "product_id": p.get("product_id", p.get("_id", "")),
                             "quantity": qty,
-                            "price": p.get("price", 0),
+                            "price": discounted_price,  # Use discounted price
                             "total_price": total_price
                         })
                         total_bill += total_price
