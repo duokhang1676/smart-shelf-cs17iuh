@@ -97,13 +97,23 @@ class VietQRPaymentAPI:
                     if transactions_sorted.index(tx) < 3:  # Only log first 3 to avoid spam
                         print(f"[SEPAY] Checking tx: date={tx_date}, amount={tx_amount}, content='{content[:50]}...'")
                     
+                    # CRITICAL: Check BOTH order_id AND amount match
                     # Check if the transaction content contains order_id and is from today
                     if order_id and order_id in content and tx_date.startswith(today):
-                        print(f"[SEPAY] ✓ Match found! Order: {order_id}, Content: {content}")
-                        return True, tx
+                        # Verify amount matches (must be exact or greater)
+                        if amount is not None and tx_amount >= amount:
+                            print(f"[SEPAY] ✓ Match found! Order: {order_id}, Amount: {tx_amount} >= {amount}, Content: {content}")
+                            return True, tx
+                        elif amount is not None:
+                            print(f"[SEPAY] ✗ Amount mismatch! Order: {order_id}, Received: {tx_amount}, Expected: {amount}")
+                            # Continue checking other transactions
+                        else:
+                            # If amount is None, accept any amount (legacy behavior)
+                            print(f"[SEPAY] ⚠ Match found without amount verification! Order: {order_id}, Content: {content}")
+                            return True, tx
                 
                 # If no match, log what we're looking for
-                print(f"[SEPAY] No match found. Looking for order_id='{order_id}' in today's transactions")
+                print(f"[SEPAY] No match found. Looking for order_id='{order_id}' with amount={amount} in today's transactions")
                                 
             return False, None
             
