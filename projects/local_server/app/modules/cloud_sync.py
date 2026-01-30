@@ -172,27 +172,37 @@ def load_sepay_info_from_cloud():
         print(f"Warning: Error loading Sepay info from cloud: {e}")
 
 def post_order_data_to_cloud(order_data):
-    load_dotenv()
-    file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame/frame_box.jpg"))
-    url = os.getenv("POST_ORDER_API_KEY")
-    
-    # Convert orderDetails array to JSON string for multipart form data
-    order_data_copy = order_data.copy()
-    if 'orderDetails' in order_data_copy:
-        order_data_copy['orderDetails'] = json.dumps(order_data_copy['orderDetails'])
-    
-    print(f"DEBUG: Sending order_data to cloud: {order_data_copy}")
-    
-    with open(file_path, "rb") as f:
-        files = {"file": (os.path.basename(file_path), f, "image/jpeg")}
-        response = requests.post(url, files=files, data=order_data_copy, timeout=30)
+    try:
+        load_dotenv()
+        file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame/frame_box.jpg"))
+        url = os.getenv("POST_ORDER_API_KEY")
+        
+        # Convert orderDetails array to JSON string for multipart form data
+        order_data_copy = order_data.copy()
+        if 'orderDetails' in order_data_copy:
+            order_data_copy['orderDetails'] = json.dumps(order_data_copy['orderDetails'])
+        
+        print(f"DEBUG: Sending order_data to cloud: {order_data_copy}")
+        
+        with open(file_path, "rb") as f:
+            files = {"file": (os.path.basename(file_path), f, "image/jpeg")}
+            response = requests.post(url, files=files, data=order_data_copy, timeout=30)
 
-        if response.ok:
-            print("Order data posted successfully")
-            print(response.text)
-        else:
-            print(f"Failed to post order data: {response.status_code}")
-            print(response.text)
+            if response.ok:
+                print("Order data posted successfully")
+                print(response.text)
+            else:
+                print(f"Failed to post order data: {response.status_code}")
+                print(response.text)
+    except requests.exceptions.ConnectionError as e:
+        print(f"Connection error while posting order data: {e}")
+        raise  # Re-raise to be caught by caller
+    except requests.exceptions.Timeout as e:
+        print(f"Timeout while posting order data: {e}")
+        raise
+    except Exception as e:
+        print(f"Unexpected error while posting order data: {e}")
+        raise
 
 def post_history_added_products_to_cloud(history_added_data):
     load_dotenv()

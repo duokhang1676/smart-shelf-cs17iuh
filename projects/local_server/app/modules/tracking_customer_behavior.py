@@ -174,8 +174,16 @@ def start_tracking_customer_behavior():
                     'shelf_id': shelf_id,
                     'total_bill': total_bill,
                     'orderDetails': order_details
-                }     
-                post_order_data_to_cloud(order_data)
+                }
+                
+                # Try to post order data to cloud with error handling
+                try:
+                    print(f"Attempting to send unpaid order {order_id} to cloud...")
+                    post_order_data_to_cloud(order_data)
+                    print(f"Successfully sent unpaid order {order_id} to cloud")
+                except Exception as e:
+                    print(f"WARNING: Failed to send unpaid order to cloud: {e}")
+                    print("Continuing without cloud sync...")
 
                 alert = 0
                 customer_frame = None
