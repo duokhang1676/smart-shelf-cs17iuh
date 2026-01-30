@@ -249,6 +249,41 @@ def set_cart_api():
             'message': f'Failed to set cart: {str(e)}'
         }), 500
 
+@api_bp.route('/cart/apply-combos', methods=['POST'])
+def apply_combos_to_cart():
+    """Apply combo pricing to provided cart items"""
+    try:
+        data = request.get_json()
+        if not data or 'cart_items' not in data:
+            return jsonify({
+                'success': False,
+                'message': 'No cart items provided'
+            }), 400
+        
+        cart_items = data['cart_items']
+        
+        # Apply combo pricing
+        from app.utils.loadcell_utils import update_cart_with_combo_pricing
+        updated_cart, applied_combos = update_cart_with_combo_pricing(cart_items)
+        
+        return jsonify({
+            'success': True,
+            'cart_items': updated_cart,
+            'applied_combos': applied_combos,
+            'message': f'Applied {len(applied_combos)} combo(s)' if applied_combos else 'No combos applied'
+        })
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to apply combos: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Failed to apply combos: {str(e)}',
+            'cart_items': data.get('cart_items', []),
+            'applied_combos': []
+        }), 500
+
 @api_bp.route('/combos')
 def api_combos():
     """Get active combos only (for slideshow and public pages)"""

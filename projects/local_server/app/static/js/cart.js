@@ -667,11 +667,22 @@ function renderCart() {
             quantity.innerHTML = `${p.qty}`;
         }
         
-        // Combo badge
+        // Combo badge with name
         if (p.in_combo) {
             const badge = document.createElement('div');
             badge.className = 'combo-badge';
-            badge.textContent = 'COMBO';
+            const comboName = p.in_combo.combo_name || 'COMBO';
+            const comboType = p.in_combo.combo_type || 'regular';
+            
+            if (comboType === 'buy_x_get_y') {
+                const buyQty = p.in_combo.buy_quantity || 0;
+                const getQty = p.in_combo.get_quantity || 0;
+                badge.textContent = `MUA ${buyQty} TẶNG ${getQty}`;
+                badge.title = comboName;
+            } else {
+                badge.textContent = 'COMBO';
+                badge.title = comboName;
+            }
             details.appendChild(badge);
         }
         
@@ -748,23 +759,62 @@ function updateComboSavingsDisplay(products) {
     if (!comboSavingsDiv) return;
     
     let totalSavings = 0;
-    let hasCombo = false;
+    const comboDetails = {}; // Group by combo_id
     
     products.forEach(product => {
-        if (product.in_combo && product.original_price) {
-            const savings = (product.original_price - product.price) * product.qty;
-            totalSavings += savings;
-            hasCombo = true;
+        if (product.in_combo) {
+            const comboId = product.in_combo.combo_id || 'unknown';
+            const comboName = product.in_combo.combo_name || 'Combo';
+            const comboType = product.in_combo.combo_type || 'regular';
+            
+            if (!comboDetails[comboId]) {
+                comboDetails[comboId] = {
+                    name: comboName,
+                    type: comboType,
+                    savings: 0,
+                    products: []
+                };
+            }
+            
+            // Calculate savings
+            let itemSavings = 0;
+            if (comboType === 'buy_x_get_y' && product.free_qty > 0) {
+                itemSavings = (product.original_price || product.price) * product.free_qty;
+            } else if (product.original_price && product.original_price > product.price) {
+                itemSavings = (product.original_price - product.price) * product.qty;
+            }
+            
+            comboDetails[comboId].savings += itemSavings;
+            comboDetails[comboId].products.push(product.product_name || 'Sản phẩm');
+            totalSavings += itemSavings;
         }
     });
     
-    if (hasCombo && totalSavings > 0) {
-        comboSavingsDiv.innerHTML = `
-            <div class="combo-savings-content">
-                <span class="combo-icon">🎉</span>
-                <span class="combo-text">Tiết kiệm combo: ${formatMoney(totalSavings)} ₫</span>
-            </div>
-        `;
+    if (totalSavings > 0) {
+        let html = '<div class="combo-savings-content" style="padding: 8px;">';
+        html += '<div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">';
+        html += '<span style="font-size: 1.2em;">🎉</span> ';
+        html += `Tiết kiệm từ Combo: ${formatMoney(totalSavings)} ₫`;
+        html += '</div>';
+        
+        // Show combo details
+        for (const comboId in comboDetails) {
+            const combo = comboDetails[comboId];
+            html += '<div style="font-size: 0.9em; color: #555; margin-left: 20px;">';
+            
+            if (combo.type === 'buy_x_get_y') {
+                html += `<span style="font-weight: 500;">${combo.name}</span>: `;
+                html += `Tiết kiệm ${formatMoney(combo.savings)} ₫ (Tặng sản phẩm miễn phí)`;
+            } else {
+                html += `<span style="font-weight: 500;">${combo.name}</span>: `;
+                html += `Tiết kiệm ${formatMoney(combo.savings)} ₫`;
+            }
+            
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        comboSavingsDiv.innerHTML = html;
         comboSavingsDiv.style.display = 'block';
     } else {
         comboSavingsDiv.style.display = 'none';
@@ -987,7 +1037,19 @@ function renderCartWithComboDisplay(cartItems) {
         if (p.in_combo) {
             const comboBadge = document.createElement('div');
             comboBadge.className = 'combo-badge';
-            comboBadge.textContent = 'COMBO';
+            const comboName = p.in_combo.combo_name || 'COMBO';
+            const comboType = p.in_combo.combo_type || 'regular';
+            
+            if (comboType === 'buy_x_get_y') {
+                const buyQty = p.in_combo.buy_quantity || 0;
+                const getQty = p.in_combo.get_quantity || 0;
+                comboBadge.textContent = `MUA ${buyQty} TẶNG ${getQty}`;
+                comboBadge.title = comboName;
+                comboBadge.style.backgroundColor = '#ff5722';
+            } else {
+                comboBadge.textContent = 'COMBO';
+                comboBadge.title = comboName;
+            }
             details.appendChild(comboBadge);
         } else if (hasDiscount) {
             const discountBadge = document.createElement('div');

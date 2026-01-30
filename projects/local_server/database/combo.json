@@ -6,8 +6,8 @@
         "img": "http://ducdatphat.id.vn:3000/uploads/image-1757662326487.jpg",
         "price": 10000,
         "oldPrice": 15000,
-        "validFrom": "2025-09-10T17:00:00.000Z",
-        "validTo": "2025-10-30T17:00:00.000Z",
+        "validFrom": "2026-01-01T00:00:00.000Z",
+        "validTo": "2026-12-31T23:59:59.000Z",
         "products": [
             "68790f04d07799278cee152c",
             "68c3c9c41c3e303035a8d656"
@@ -20,8 +20,8 @@
         "img": "http://ducdatphat.id.vn:3000/uploads/image-1757507976386.png",
         "price": 20000,
         "oldPrice": 25000,
-        "validFrom": "2025-09-09T17:00:00.000Z",
-        "validTo": "2025-09-29T17:00:00.000Z",
+        "validFrom": "2026-01-01T00:00:00.000Z",
+        "validTo": "2026-12-31T23:59:59.000Z",
         "products": [
             "68790f04d07799278cee152d",
             "68c3c9181c3e303035a8d63f"
