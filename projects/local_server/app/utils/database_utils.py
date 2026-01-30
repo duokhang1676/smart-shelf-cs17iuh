@@ -190,7 +190,11 @@ def detect_and_apply_combo_pricing(cart_items):
                         if (item.get('product_id') == promo_product_id or 
                             str(item.get('id')) == str(promo_product_id)):
                             updated_cart[j] = item.copy()
-                            updated_cart[j]['original_price'] = product_price
+                            # DON'T overwrite original_price - it should be the price from products.json BEFORE discount
+                            # Only set it if it doesn't exist yet
+                            if 'original_price' not in updated_cart[j] or updated_cart[j]['original_price'] is None:
+                                # Fallback: get from product_lookup (original price before discount)
+                                updated_cart[j]['original_price'] = product_lookup[promo_product_id]['price']
                             updated_cart[j]['original_qty'] = current_qty
                             updated_cart[j]['free_qty'] = free_items
                             updated_cart[j]['total_qty'] = total_items
@@ -263,7 +267,11 @@ def detect_and_apply_combo_pricing(cart_items):
                         if (item.get('product_id') == product_id or 
                             str(item.get('id')) == str(product_id)):
                             updated_cart[j] = item.copy()
-                            updated_cart[j]['original_price'] = original_item_price
+                            # DON'T overwrite original_price if it exists - it should always be the price from products.json
+                            # Only set it if it doesn't exist yet
+                            if 'original_price' not in updated_cart[j] or updated_cart[j]['original_price'] is None:
+                                # Fallback: get from product_lookup (original price before discount)
+                                updated_cart[j]['original_price'] = product_lookup[str(product_id)]['price']
                             updated_cart[j]['combo_price'] = combo_item_price
                             updated_cart[j]['price'] = combo_item_price  # Use combo price
                             updated_cart[j]['in_combo'] = combo_info

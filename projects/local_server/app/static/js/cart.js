@@ -724,17 +724,18 @@ function updateOrderSummary(cartItems) {
     let totalDiscount = 0; // Tổng giảm giá
     
     cartItems.forEach(item => {
-        // Tạm tính dựa trên giá gốc
+        // Tạm tính dựa trên giá gốc (trước khi giảm giá)
         const originalPrice = item.original_price || item.price;
         const itemSubtotal = originalPrice * item.qty;
         subtotal += itemSubtotal;
         
-        // Tính giảm giá từ combo
+        // Tính giảm giá từ cả discount riêng lẻ VÀ combo
+        // Nếu có original_price khác price thì đó là giảm giá (dù từ discount hay combo)
         if (item.original_price && item.original_price > item.price) {
             totalDiscount += (item.original_price - item.price) * item.qty;
         }
         
-        // Tính giảm giá từ promotion buy_x_get_y
+        // Tính giảm giá từ promotion buy_x_get_y (sản phẩm miễn phí)
         if (item.promotion_type === 'buy_x_get_y' && item.free_qty > 0) {
             const freeValue = (item.original_price || item.price) * item.free_qty;
             totalDiscount += freeValue;
