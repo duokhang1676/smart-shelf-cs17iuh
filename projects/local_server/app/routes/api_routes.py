@@ -381,7 +381,7 @@ def process_cart():
         
         # Apply combo pricing and calculate total
         updated_cart, applied_combos = detect_and_apply_combo_pricing(cart)
-        total, breakdown = calculate_cart_total_with_combos(cart)
+        total, breakdown = calculate_cart_total_with_combos(updated_cart)
         
         valid_items = []
         invalid_items = []
