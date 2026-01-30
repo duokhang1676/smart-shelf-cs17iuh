@@ -271,7 +271,9 @@ def detect_and_apply_combo_pricing(cart_items):
             combo_items = []
             
             for i, product_id in enumerate(combo_products):
-                if sproduct_data = product_lookup.get(str(product_id), {})
+                if str(product_id) in cart_by_product_id:
+                    cart_item = cart_by_product_id[str(product_id)]
+                    product_data = product_lookup.get(str(product_id), {})
                     
                     # Get true original price (before any discount) and discounted price
                     true_original_price, discounted_price = get_product_price_with_discount(product_data)
