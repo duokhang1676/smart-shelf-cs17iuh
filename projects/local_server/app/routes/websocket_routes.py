@@ -174,13 +174,14 @@ def register_websocket_handlers(socketio, get_cart_func):
                 print(f'WebSocket QR generation successful for order {order_id}')
                 
                 # Auto-start payment monitoring after QR generation
-                print(f'Auto-starting payment monitoring for order {order_id}')
-                auto_start_payment_monitoring(
-                    socketio, 
-                    order_id, 
-                    total, 
-                    data.get('products', [])
-                )
+                # COMMENTED OUT - Using webhook listener instead of polling
+                # print(f'Auto-starting payment monitoring for order {order_id}')
+                # auto_start_payment_monitoring(
+                #     socketio, 
+                #     order_id, 
+                #     total, 
+                #     data.get('products', [])
+                # )
                 
             except Exception as e:
                 print(f'WebSocket QR generation failed for order {order_id}: {e}')
