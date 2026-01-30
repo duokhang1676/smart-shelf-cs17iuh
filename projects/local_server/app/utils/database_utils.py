@@ -310,9 +310,7 @@ def detect_and_apply_combo_pricing(cart_items):
                             updated_cart[j]['combo_price'] = combo_item_price
                             updated_cart[j]['price'] = combo_item_price  # Final price (combo price)
                             updated_cart[j]['in_combo'] = combo_info
-                            updated_cart[j]['savings'] = current_price  # Use combo price
-                            updated_cart[j]['in_combo'] = combo_info
-                            updated_cart[j]['savings'] = original_item_price - combo_item_price
+                            updated_cart[j]['savings'] = current_item_price - combo_item_price
                             break
             
             # Update combo_info with exact item breakdown
