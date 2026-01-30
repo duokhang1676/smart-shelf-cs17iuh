@@ -22,6 +22,7 @@ from app.modules import globals
 from app.utils.sound_utils import play_sound
 import threading
 from collections import deque
+from threading import Lock
 # Load environment variables
 load_dotenv()
 
@@ -57,6 +58,7 @@ delay_threshold_shake = 10
 windows_length = 5
 windows = deque([0] * windows_length, maxlen=windows_length)
 pre_x, pre_y, pre_z = (0,0,0)
+imu_lock = Lock()  # Lock to protect global variables
 sound_file_path_lean = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/imu_alert.mp3"))
 sound_file_path_shake = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/imu_alert_2.mp3"))
 
@@ -111,14 +113,18 @@ def imu_processing(x,y,z):
 # Create handler to receive IMU notifications
 def create_notify_handler(uuid):
     def handler(sender, data):
-        if uuid == IMU_UUID and len(data) == 6:
-            x, y, z = struct.unpack("<hhh", data)
-            if globals.get_imu_data_init() is None:
-                global pre_x, pre_y, pre_z
-                globals.set_imu_data_init((x, y, z))
-                pre_x, pre_y, pre_z = x, y, z
-            else:
-                imu_processing(x, y, z)
+        try:
+            if uuid == IMU_UUID and len(data) == 6:
+                x, y, z = struct.unpack("<hhh", data)
+                with imu_lock:  # Thread-safe access
+                    global pre_x, pre_y, pre_z
+                    if globals.get_imu_data_init() is None:
+                        globals.set_imu_data_init((x, y, z))
+                        pre_x, pre_y, pre_z = x, y, z
+                    else:
+                        imu_processing(x, y, z)
+        except Exception as e:
+            print(f"⚠ Error in notification handler: {e}")
     return handler
 
 # Main BLE connection and reading loop
@@ -159,13 +165,19 @@ async def connect_and_monitor():
                         except Exception as notify_error:
                             print(f"⚠ Failed to enable notifications for {label}: {notify_error}")
 
-                # Main read loop
+                # Main read loop with improved stability
+                read_cycle_count = 0
                 while client.is_connected:
                     try:
                         for uuid, (label, fmt, scale, is_notify) in CHAR_MAP.items():
                             if not is_notify:  # Only read non-notify characteristics
+                                # Check connection state before each read
+                                if not client.is_connected:
+                                    print("⚠ Connection lost during read cycle")
+                                    break
+                                    
                                 try:
-                                    data = await asyncio.wait_for(client.read_gatt_char(uuid), timeout=5.0)
+                                    data = await asyncio.wait_for(client.read_gatt_char(uuid), timeout=10.0)
                                     if len(data) == struct.calcsize(fmt):
                                         value = struct.unpack(fmt, data)[0] / scale
 
@@ -188,12 +200,23 @@ async def connect_and_monitor():
                                     print(f"{label}: Read timeout, skipping...")
                                 except Exception as e:
                                     print(f"{label}: Read error - {e}")
+                                
+                                # Add delay between characteristic reads to avoid BLE stack overload
+                                await asyncio.sleep(0.2)
                         
-                        await asyncio.sleep(5)  # Delay between reads
+                        # Keepalive: send a read request periodically to maintain connection
+                        read_cycle_count += 1
+                        if read_cycle_count % 6 == 0:  # Every 6th cycle (~1 minute)
+                            try:
+                                await client.read_gatt_char(CHAR_UUID_TEMPERATURE)  # Lightweight keepalive
+                            except:
+                                pass
+                        
+                        await asyncio.sleep(10)  # Increased delay between read cycles (was 5s)
                         
                     except Exception as read_loop_error:
                         print(f"Error in read loop: {read_loop_error}")
-                        await asyncio.sleep(2)
+                        await asyncio.sleep(3)
                         if not client.is_connected:
                             break
 
