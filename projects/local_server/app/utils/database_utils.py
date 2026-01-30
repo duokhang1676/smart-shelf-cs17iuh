@@ -344,10 +344,16 @@ def calculate_cart_total_with_combos(cart_items):
             # Regular item or regular combo
             item_total = item_price * quantity
             
-            # Track savings if item is in combo
+            # Calculate savings for this item
+            item_savings = 0
             if 'savings' in item:
+                # Item is in combo - use combo savings
                 item_savings = item['savings'] * quantity
-                total_savings += item_savings
+            elif item.get('original_price') and item.get('original_price') > item_price:
+                # Item has individual discount (not in combo)
+                item_savings = (item['original_price'] - item_price) * quantity
+            
+            total_savings += item_savings
             
             breakdown['items'].append({
                 'name': item.get('product_name', 'Unknown'),
@@ -356,7 +362,7 @@ def calculate_cart_total_with_combos(cart_items):
                 'total': item_total,
                 'original_price': item.get('original_price'),
                 'in_combo': item.get('in_combo', {}).get('combo_name') if 'in_combo' in item else None,
-                'savings': item.get('savings', 0) * quantity
+                'savings': item_savings
             })
             
             total += item_total
