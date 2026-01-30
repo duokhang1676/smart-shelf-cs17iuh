@@ -117,11 +117,14 @@ def start_tracking_customer_behavior():
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
                             obj = customer_frame_box[y1:y2, x1:x2]
-                            cv2.imwrite(f"{frame_crop_file_path}/Customer.jpg", obj)
-                            cv2.imwrite(frame_file_path, customer_frame)
+                            # cv2.imwrite(f"{frame_crop_file_path}/Customer.jpg", obj)
+                            # cv2.imwrite(frame_file_path, customer_frame)
                             cv2.imwrite(frame_box_file_path, customer_frame_box)
                         break  # Only process first person in ROI
                     else:
+                        if customer_frame is None:
+                            # cv2.imwrite(frame_file_path, frame)
+                            cv2.imwrite(frame_box_file_path, frame)
                         print(f"[OUTSIDE ROI] Person detected at ({int(cx)}, {int(cy)})")
             
             if person_detected:
