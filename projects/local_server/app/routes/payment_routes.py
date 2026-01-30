@@ -28,7 +28,7 @@ from app.services.vietqr_payment_service import VietQRPaymentAPI
 payment_bp = Blueprint('payment', __name__)
 
 # Define timeout used for both backend and frontend
-TIMEOUT_SECONDS = 60
+TIMEOUT_SECONDS = 300
 
 @payment_bp.route('/api/orders', methods=['POST'])
 def api_orders():

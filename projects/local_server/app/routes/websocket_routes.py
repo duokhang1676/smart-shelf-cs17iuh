@@ -219,7 +219,7 @@ def register_websocket_handlers(socketio, get_cart_func):
             
             print(f'Looking for payment with content: "{add_info}" or order_id: "{order_id}"')
             
-            timeout = 100  # 100 seconds
+            timeout = 300  # 300 seconds (5 minutes)
             interval = 0.3   # Check every 0.3 seconds for fastest response
             start = time.time()
             check_count = 0

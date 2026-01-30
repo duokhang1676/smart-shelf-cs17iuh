@@ -19,7 +19,7 @@
 let orderId = null;
 let orderTotal = 0;
 let orderProducts = [];
-let maxTime = 100 * 1000; // default 100 seconds
+let maxTime = 300 * 1000; // default 300 seconds (5 minutes)
 let startTime = Date.now();
 let countdownId = null;
 let lastLoadcell = null;
