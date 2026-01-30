@@ -922,10 +922,13 @@ function renderCartByLoadcell(loadcellArr, errorCodes = []) {
         if (cart.length > 0) {
             console.log('Applying combo logic to cart:', cart);
             
-            // First render products immediately (fallback)
-            renderCartWithComboDisplay(cart);
+            // Show loading state while fetching combo data
+            const productsList = document.getElementById('cart-products-list');
+            if (productsList) {
+                productsList.style.opacity = '0.5';
+            }
             
-            // Then try to apply combo logic
+            // Try to apply combo logic
             fetch('/api/cart/apply-combos', {
                 method: 'POST',
                 headers: {
@@ -937,15 +940,27 @@ function renderCartByLoadcell(loadcellArr, errorCodes = []) {
             .then(data => {
                 console.log('Combo response:', data);
                 if (data.cart_items) {
-                    // Re-render with combo data
+                    // Render with combo data
                     renderCartWithComboDisplay(data.cart_items);
+                } else {
+                    // Fallback to original cart
+                    renderCartWithComboDisplay(cart);
                 }
             })
             .catch(error => {
                 console.error('Error applying combo:', error);
-                // Fallback to original display with simple render
+                // Fallback to original display
                 renderCartWithComboDisplay(cart);
+            })
+            .finally(() => {
+                // Restore opacity
+                if (productsList) {
+                    productsList.style.opacity = '1';
+                }
             });
+        } else {
+            // Empty cart - clear display
+            renderCartWithComboDisplay([]);
         }
         
         // Update order summary and navigation badge with cart item count
