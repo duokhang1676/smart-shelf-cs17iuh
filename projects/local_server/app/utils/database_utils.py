@@ -237,10 +237,7 @@ def detect_and_apply_combo_pricing(cart_items):
         
         elif combo_products_set.issubset(cart_product_ids):
             # Regular combo pricing (existing logic)
-            # Calculate original price vs combo price - use cart prices (with discount)
-            original_total = 0
-            for product_id in combo_products:
-                if str(product_id) in cart_by_product_id:individual discount already applied)
+            # Calculate original price vs combo price - use cart prices (with individual discount already applied)
             original_total = 0
             for product_id in combo_products:
                 if str(product_id) in cart_by_product_id:
@@ -252,6 +249,9 @@ def detect_and_apply_combo_pricing(cart_items):
                     product_data = product_lookup[str(product_id)]
                     _, discounted_price = get_product_price_with_discount(product_data)
                     original_total += discounted_price
+            
+            combo_price = combo['price']
+            savings = original_total - combo_price
             
             # Apply combo pricing to cart items
             combo_info = {
