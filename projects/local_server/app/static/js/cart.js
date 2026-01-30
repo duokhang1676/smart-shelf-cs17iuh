@@ -922,13 +922,10 @@ function renderCartByLoadcell(loadcellArr, errorCodes = []) {
         if (cart.length > 0) {
             console.log('Applying combo logic to cart:', cart);
             
-            // Show loading state while fetching combo data
-            const productsList = document.getElementById('cart-products-list');
-            if (productsList) {
-                productsList.style.opacity = '0.5';
-            }
+            // Render immediately with current cart (no delay/loading)
+            renderCartWithComboDisplay(cart);
             
-            // Try to apply combo logic
+            // Then check for combos in background
             fetch('/api/cart/apply-combos', {
                 method: 'POST',
                 headers: {
@@ -939,24 +936,16 @@ function renderCartByLoadcell(loadcellArr, errorCodes = []) {
             .then(response => response.json())
             .then(data => {
                 console.log('Combo response:', data);
-                if (data.cart_items) {
-                    // Render with combo data
+                // Only re-render if combo data is different (has combos applied)
+                if (data.cart_items && data.applied_combos && data.applied_combos.length > 0) {
+                    // Has combos - update display
                     renderCartWithComboDisplay(data.cart_items);
-                } else {
-                    // Fallback to original cart
-                    renderCartWithComboDisplay(cart);
                 }
+                // If no combos, keep the current render (no flicker)
             })
             .catch(error => {
                 console.error('Error applying combo:', error);
-                // Fallback to original display
-                renderCartWithComboDisplay(cart);
-            })
-            .finally(() => {
-                // Restore opacity
-                if (productsList) {
-                    productsList.style.opacity = '1';
-                }
+                // Already rendered, no need to do anything
             });
         } else {
             // Empty cart - clear display
