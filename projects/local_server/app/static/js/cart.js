@@ -1340,12 +1340,17 @@ function processPaymentFlow(total) {
         console.log('Tạo đơn hàng thành công! Đang chuyển đến trang thanh toán...');
         
         if (order && order.id) {
+            console.log('DEBUG: Order created, finalTotal =', finalTotal);
+            
             // Save order data to localStorage for QR page to retrieve - use finalTotal from backend
             localStorage.setItem('order_' + order.id, JSON.stringify({ 
                 total: finalTotal,  // FIX: Use finalTotal from backend (with combo discount)
                 products: products,
                 timestamp: Date.now()
             }));
+            
+            console.log('DEBUG: Saved to localStorage, total =', finalTotal);
+            console.log('DEBUG: Redirecting to /qr?orderId=' + order.id + '&total=' + finalTotal);
             
             // Clear cart
             cart = [];

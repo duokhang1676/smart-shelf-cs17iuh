@@ -66,6 +66,7 @@ function loadOrderData(params) {
         const totalParam = params.get('total');
         if (totalParam) {
             orderTotal = parseInt(totalParam) || 0;
+            console.log('DEBUG QR: Loaded total from URL params:', orderTotal);
         }
     } catch (e) {
         console.warn('Error parsing total from URL:', e);
@@ -76,9 +77,11 @@ function loadOrderData(params) {
         try {
             const storageKey = 'order_' + orderId;
             const storedData = localStorage.getItem(storageKey);
+            console.log('DEBUG QR: localStorage data:', storedData);
             if (storedData) {
                 const tmp = JSON.parse(storedData);
                 if (tmp && typeof tmp.total !== 'undefined') {
+                    console.log('DEBUG QR: Loaded total from localStorage:', tmp.total, '(overriding URL params)');
                     orderTotal = tmp.total;
                     orderProducts = tmp.products || [];
                 }
@@ -89,6 +92,7 @@ function loadOrderData(params) {
     }
 
     // Debug log
+    console.log('DEBUG QR: Final orderTotal:', orderTotal);
     console.log('Order details:', { orderId, orderTotal, orderProducts });
 }
 
@@ -132,6 +136,7 @@ function initWebSocket() {
 
     // Start QR generation via WebSocket - only if orderId exists
     if (orderId) {
+        console.log('DEBUG QR: Sending generate_qr_request with total:', orderTotal);
         socket.emit('generate_qr_request', {
             orderId: orderId,
             total: orderTotal,
