@@ -175,9 +175,17 @@ def post_order_data_to_cloud(order_data):
     load_dotenv()
     file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame/frame_box.jpg"))
     url = os.getenv("POST_ORDER_API_KEY")
+    
+    # Convert orderDetails array to JSON string for multipart form data
+    order_data_copy = order_data.copy()
+    if 'orderDetails' in order_data_copy:
+        order_data_copy['orderDetails'] = json.dumps(order_data_copy['orderDetails'])
+    
+    print(f"DEBUG: Sending order_data to cloud: {order_data_copy}")
+    
     with open(file_path, "rb") as f:
         files = {"file": (os.path.basename(file_path), f, "image/jpeg")}
-        response = requests.post(url, files=files, data=order_data, timeout=30)
+        response = requests.post(url, files=files, data=order_data_copy, timeout=30)
 
         if response.ok:
             print("Order data posted successfully")
