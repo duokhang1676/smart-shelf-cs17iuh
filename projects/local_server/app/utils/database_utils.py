@@ -162,8 +162,8 @@ def detect_and_apply_combo_pricing(cart_items):
                 free_items = eligible_sets * get_quantity
                 
                 if eligible_sets > 0:
-                    # Calculate pricing
-                    product_price = product_lookup[promo_product_id]['price']
+                    # Calculate pricing - use cart item price (with discount) not product lookup
+                    product_price = cart_item.get('price', product_lookup[promo_product_id]['price'])
                     total_items = current_qty + free_items
                     total_original_price = total_items * product_price
                     discounted_price = current_qty * product_price  # Only pay for bought items
@@ -205,10 +205,15 @@ def detect_and_apply_combo_pricing(cart_items):
         
         elif combo_products_set.issubset(cart_product_ids):
             # Regular combo pricing (existing logic)
-            # Calculate original price vs combo price
+            # Calculate original price vs combo price - use cart prices (with discount)
             original_total = 0
             for product_id in combo_products:
-                if str(product_id) in product_lookup:
+                if str(product_id) in cart_by_product_id:
+                    # Use price from cart (includes discount) instead of product lookup
+                    cart_price = cart_by_product_id[str(product_id)].get('price', 0)
+                    original_total += cart_price
+                elif str(product_id) in product_lookup:
+                    # Fallback to product lookup if not in cart
                     original_total += product_lookup[str(product_id)]['price']
             
             combo_price = combo['price']
@@ -234,7 +239,8 @@ def detect_and_apply_combo_pricing(cart_items):
             for i, product_id in enumerate(combo_products):
                 if str(product_id) in cart_by_product_id:
                     cart_item = cart_by_product_id[str(product_id)]
-                    original_item_price = product_lookup[str(product_id)]['price']
+                    # Use cart price (with discount) instead of product lookup price
+                    original_item_price = cart_item.get('price', product_lookup[str(product_id)]['price'])
                     
                     # Calculate proportional combo price for this item
                     if i == len(combo_products) - 1:
