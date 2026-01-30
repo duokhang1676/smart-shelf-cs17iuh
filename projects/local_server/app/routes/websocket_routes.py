@@ -262,17 +262,34 @@ def register_websocket_handlers(socketio, get_cart_func):
                         # Don't break, continue monitoring in case manual test is triggered
                 
                 if success and tx and order_id in tx.get('transaction_content', ''):
-                    # Save order and order_detail to JSON file when payment is successful    
+                    # Save order and order_detail to JSON file when payment is successful
+                    print(f'DEBUG: Creating order details from products: {products}')
+                    
                     order_details = []
                     order_details_products_name = []
                     for p in products:
-                        order_details_products_name.append(remove_accents(p.get('product_name', '')))
+                        product_id = p.get('product_id', p.get('_id', ''))
+                        product_name = p.get('product_name', '')
+                        qty = p.get('qty', 0)
+                        price = p.get('price', 0)
+                        
+                        # Debug log for each product
+                        print(f'DEBUG: Processing product - ID: {product_id}, Name: {product_name}, Qty: {qty}, Price: {price}')
+                        
+                        # Skip products with missing critical data
+                        if not product_id or qty <= 0:
+                            print(f'WARNING: Skipping product with missing data - ID: {product_id}, Qty: {qty}')
+                            continue
+                        
+                        order_details_products_name.append(remove_accents(product_name))
                         order_details.append({
-                            'product_id': p.get('product_id', p.get('_id', '')),
-                            'quantity': p['qty'],
-                            'price': p.get('price', 0),
-                            'total_price': p['qty'] * p.get('price', 0)
+                            'product_id': product_id,
+                            'quantity': qty,
+                            'price': price,
+                            'total_price': qty * price
                         })
+                    
+                    print(f'DEBUG: Created {len(order_details)} order details')
 
                     shelf_id = os.getenv("SHELF_ID_CLOUD")
                     order_data = {
@@ -281,7 +298,14 @@ def register_websocket_handlers(socketio, get_cart_func):
                         'shelf_id': shelf_id,
                         'total_bill': total,
                         'orderDetails': order_details
-                    }       
+                    }
+                    
+                    print(f'DEBUG: Final order_data to send to cloud:')
+                    print(f'  - Order ID: {order_id}')
+                    print(f'  - Total: {total}')
+                    print(f'  - Order Details Count: {len(order_details)}')
+                    print(f'  - Order Details: {order_details}')
+                    
                     print(f'{monitoring_type} payment successful! Order {order_id}, transaction: {tx.get("id", "N/A")}')
                     
                     # Set payment verified to True
