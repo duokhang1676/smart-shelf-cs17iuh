@@ -720,8 +720,8 @@ function updateOrderSummary(cartItems) {
     const discountSpan = document.querySelector('#discount-row .amount');
     const totalAmountSpan = document.querySelector('#total-row .total-amount');
     
-    let subtotal = 0; // Tổng giá gốc
-    let totalDiscount = 0; // Tổng giảm giá
+    let subtotal = 0; // Tổng giá gốc (trước mọi giảm giá)
+    let totalDiscount = 0; // Tổng giảm giá (cả discount riêng lẻ + combo)
     
     cartItems.forEach(item => {
         // Tạm tính dựa trên giá gốc (trước khi giảm giá)
@@ -729,15 +729,27 @@ function updateOrderSummary(cartItems) {
         const itemSubtotal = originalPrice * item.qty;
         subtotal += itemSubtotal;
         
-        // Tính giảm giá từ cả discount riêng lẻ VÀ combo
-        // Nếu có original_price khác price thì đó là giảm giá (dù từ discount hay combo)
-        if (item.original_price && item.original_price > item.price) {
-            totalDiscount += (item.original_price - item.price) * item.qty;
+        // Tính tổng giảm giá = giảm giá riêng lẻ + giảm giá combo
+        // Case 1: Sản phẩm có discount riêng lẻ NHƯNG KHÔNG có combo
+        if (!item.in_combo && item.discount && item.discount > 0) {
+            // Giảm giá riêng lẻ = original_price - price (discounted price)
+            const individualDiscount = (item.original_price - item.price) * item.qty;
+            totalDiscount += individualDiscount;
+        }
+        // Case 2: Sản phẩm trong combo (có thể có hoặc không có discount riêng lẻ trước đó)
+        else if (item.in_combo) {
+            // Tổng giảm giá = original_price - final combo price
+            // (bao gồm cả discount riêng lẻ + combo discount)
+            const totalItemDiscount = (item.original_price - item.price) * item.qty;
+            totalDiscount += totalItemDiscount;
         }
         
         // Tính giảm giá từ promotion buy_x_get_y (sản phẩm miễn phí)
         if (item.promotion_type === 'buy_x_get_y' && item.free_qty > 0) {
-            const freeValue = (item.original_price || item.price) * item.free_qty;
+            // Sản phẩm miễn phí = giá trị của số lượng free
+            // Dùng discounted_price nếu có (giá sau discount riêng lẻ), nếu không dùng original_price
+            const priceForFreeItems = item.discounted_price || item.original_price || item.price;
+            const freeValue = priceForFreeItems * item.free_qty;
             totalDiscount += freeValue;
         }
     });

@@ -195,6 +195,9 @@ def detect_and_apply_combo_pricing(cart_items):
                             if 'original_price' not in updated_cart[j] or updated_cart[j]['original_price'] is None:
                                 # Fallback: get from product_lookup (original price before discount)
                                 updated_cart[j]['original_price'] = product_lookup[promo_product_id]['price']
+                            # Store the price AFTER individual discount but BEFORE combo (to preserve individual discount)
+                            if 'discounted_price' not in updated_cart[j]:
+                                updated_cart[j]['discounted_price'] = updated_cart[j].get('price', product_price)
                             updated_cart[j]['original_qty'] = current_qty
                             updated_cart[j]['free_qty'] = free_items
                             updated_cart[j]['total_qty'] = total_items
@@ -272,6 +275,9 @@ def detect_and_apply_combo_pricing(cart_items):
                             if 'original_price' not in updated_cart[j] or updated_cart[j]['original_price'] is None:
                                 # Fallback: get from product_lookup (original price before discount)
                                 updated_cart[j]['original_price'] = product_lookup[str(product_id)]['price']
+                            # Store the price AFTER individual discount but BEFORE combo (to preserve individual discount)
+                            if 'discounted_price' not in updated_cart[j]:
+                                updated_cart[j]['discounted_price'] = updated_cart[j].get('price', original_item_price)
                             updated_cart[j]['combo_price'] = combo_item_price
                             updated_cart[j]['price'] = combo_item_price  # Use combo price
                             updated_cart[j]['in_combo'] = combo_info
