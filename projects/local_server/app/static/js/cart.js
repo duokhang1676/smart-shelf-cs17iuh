@@ -1266,6 +1266,8 @@ function processPaymentFlow(total) {
     const controller = new AbortController();
     let timeoutId;
     let products; // Declare products at function scope
+    let finalTotal; // Declare finalTotal at function scope to use across promise chain
+    let comboInfo; // Declare comboInfo at function scope
     
     // First process cart to get combo pricing
     fetch('/api/cart/process', {
@@ -1283,8 +1285,8 @@ function processPaymentFlow(total) {
         
         // Use processed cart with combo pricing
         const processedCart = cartProcessResult.cart;
-        const finalTotal = cartProcessResult.total;
-        const comboInfo = cartProcessResult.combo_info;
+        finalTotal = cartProcessResult.total; // Assign to function-scoped variable
+        comboInfo = cartProcessResult.combo_info; // Assign to function-scoped variable
         
         // Show combo savings to user
         if (comboInfo.combo_count > 0) {
@@ -1325,9 +1327,9 @@ function processPaymentFlow(total) {
         console.log('Tạo đơn hàng thành công! Đang chuyển đến trang thanh toán...');
         
         if (order && order.id) {
-            // Save order data to localStorage for QR page to retrieve
+            // Save order data to localStorage for QR page to retrieve - use finalTotal from backend
             localStorage.setItem('order_' + order.id, JSON.stringify({ 
-                total: total, 
+                total: finalTotal,  // FIX: Use finalTotal from backend (with combo discount)
                 products: products,
                 timestamp: Date.now()
             }));
@@ -1336,8 +1338,8 @@ function processPaymentFlow(total) {
             cart = [];
             renderCart();
             
-            // Redirect immediately without notification
-            window.location.href = `/qr?orderId=${order.id}&total=${total}`;
+            // Redirect with finalTotal (combo pricing applied)
+            window.location.href = `/qr?orderId=${order.id}&total=${finalTotal}`;
         } else {
             throw new Error('Order creation failed');
         }
