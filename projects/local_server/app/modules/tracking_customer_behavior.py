@@ -78,7 +78,7 @@ def start_tracking_customer_behavior():
             time.sleep(1)
             continue
         
-        time.sleep(0.05)  # Add a small delay to reduce CPU usage
+        time.sleep(0.1)  # Add a small delay to reduce CPU usage
         ret, frame = cap.read()
         # frame = cv2.resize(frame, (416, 416))
 
@@ -132,17 +132,17 @@ def start_tracking_customer_behavior():
             print("⚠️  Warning: No person detected.")
             alert += 1
             print(f"DEBUG: Alert counter = {alert}")  # Debug log
-            if alert == 50:
+            if alert == 40:
                 time.sleep(1)
                 print("DEBUG: Playing sound_file_path_3 (alert == 20)")  # Debug log
                 threading.Thread(target=play_sound, args=(sound_file_path_3,)).start()
                 time.sleep(3)
-            if alert == 100:
+            if alert == 80:
                 time.sleep(1)
                 print("DEBUG: Playing sound_file_path_3 (alert == 60)")  # Debug log
                 threading.Thread(target=play_sound, args=(sound_file_path_3,)).start()
                 time.sleep(3)
-            if alert == 150:
+            if alert == 120:
                 print("DEBUG: Playing sound_file_path_4 (alert == 100)")  # Debug log
                 threading.Thread(target=play_sound, args=(sound_file_path_4,)).start()
                 globals.set_unpaid_customer_warning(True)
