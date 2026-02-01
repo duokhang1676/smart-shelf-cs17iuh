@@ -76,7 +76,7 @@ def send_mqtt_data():
                 "light": globals.get_light(),
                 "pressure": globals.get_pressure()
             }
-            client.publish(os.getenv("MQTT_SENSOR_TOPIC"), json.dumps(sensor_data))
+            client.publish(os.getenv("MQTT_SENSOR_TOPIC"), json.dumps(sensor_data), retain=True)
             if globals.get_shelf_lean() or globals.get_shelf_shake():
                 shelf_status = {
                     "id": os.getenv("SHELF_ID"),
@@ -84,7 +84,7 @@ def send_mqtt_data():
                     "shelf_status_shake": globals.get_shelf_shake(),
                     "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                client.publish(os.getenv("MQTT_SHELF_STATUS_TOPIC"), json.dumps(shelf_status))
+                client.publish(os.getenv("MQTT_SHELF_STATUS_TOPIC"), json.dumps(shelf_status), retain=True)
                 print("Sent shelf status update")
                 globals.set_shelf_lean(False)
                 globals.set_shelf_shake(False)
@@ -94,7 +94,7 @@ def send_mqtt_data():
                     "taken_quantity": globals.get_taken_quantity(),
                     "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                client.publish(os.getenv("MQTT_UNPAID_CUSTOMER_TOPIC"), json.dumps(unpaid_customer))
+                client.publish(os.getenv("MQTT_UNPAID_CUSTOMER_TOPIC"), json.dumps(unpaid_customer), retain=True)
                 print("Sent unpaid customer warning")
                 globals.set_unpaid_customer_warning(False)
         except Exception as e:
@@ -220,7 +220,7 @@ def notification_handler_factory(device_name):
                 "values": new_data if isinstance(new_data, list) else [int(x) for x in new_data]
             }
             payload = json.dumps(mqtt_data)
-            client.publish(os.getenv("MQTT_LOADCELL_TOPIC"), payload)
+            client.publish(os.getenv("MQTT_LOADCELL_TOPIC"), payload, retain=True)
             print(f"Send: {payload}")
         except Exception as e:
             print("Stop send mqtt data.")
