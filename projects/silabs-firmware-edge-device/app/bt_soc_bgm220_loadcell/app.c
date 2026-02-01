@@ -315,7 +315,7 @@ SL_WEAK void app_init(void)
 
 
 // debug fix loadcell //////////////////////////////////////////////////////////////////////////////////////
-//  last_quantity[1] = 255;  // load cell 2
+  last_quantity[1] = 255;  // load cell 2
   last_quantity[5] = 255;
   // debug fix loadcell //////////////////////////////////////////////////////////////////////////////////////
 
@@ -517,5 +517,5 @@ SL_WEAK void app_process_action(void)
         printf(" ]\n");
       }
   }
-  sl_sleeptimer_delay_millisecond(800);
+  sl_sleeptimer_delay_millisecond(700);
 }
