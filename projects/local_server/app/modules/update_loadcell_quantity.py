@@ -64,19 +64,95 @@ DEVICES = {
         "queue": None
     }
 }
+
+# Store previous sensor values for comparison
+previous_sensor_values = {
+    "humidity": None,
+    "temperature": None,
+    "light": None,
+    "pressure": None
+}
+last_heartbeat_time = 0
+HEARTBEAT_INTERVAL = 300  # 5 minutes in seconds
+
+def should_publish_sensor_data(current_data):
+    """Check if sensor data has changed significantly or if heartbeat is due"""
+    global previous_sensor_values, last_heartbeat_time
+    
+    current_time = time.time()
+    
+    # Heartbeat check - publish every HEARTBEAT_INTERVAL seconds
+    if current_time - last_heartbeat_time >= HEARTBEAT_INTERVAL:
+        last_heartbeat_time = current_time
+        previous_sensor_values.update(current_data)
+        return True, "heartbeat"
+    
+    # First time publishing
+    if previous_sensor_values["temperature"] is None:
+        previous_sensor_values.update(current_data)
+        last_heartbeat_time = current_time
+        return True, "initial"
+    
+    # Check each sensor value for significant changes
+    temp_change = abs(current_data["temperature"] - previous_sensor_values["temperature"])
+    humidity_change = abs(current_data["humidity"] - previous_sensor_values["humidity"])
+    
+    # Calculate percentage change for light and pressure
+    light_change_percent = 0
+    if previous_sensor_values["light"] != 0:
+        light_change_percent = abs(current_data["light"] - previous_sensor_values["light"]) / previous_sensor_values["light"] * 100
+    
+    pressure_change_percent = 0
+    if previous_sensor_values["pressure"] != 0:
+        pressure_change_percent = abs(current_data["pressure"] - previous_sensor_values["pressure"]) / previous_sensor_values["pressure"] * 100
+    
+    # Thresholds
+    TEMP_THRESHOLD = 0.5  # degrees
+    HUMIDITY_THRESHOLD = 0.5  # percent
+    LIGHT_THRESHOLD = 5  # percent
+    PRESSURE_THRESHOLD = 5  # percent
+    
+    if temp_change >= TEMP_THRESHOLD:
+        previous_sensor_values.update(current_data)
+        return True, f"temperature change: {temp_change:.2f}°C"
+    
+    if humidity_change >= HUMIDITY_THRESHOLD:
+        previous_sensor_values.update(current_data)
+        return True, f"humidity change: {humidity_change:.2f}%"
+    
+    if light_change_percent >= LIGHT_THRESHOLD:
+        previous_sensor_values.update(current_data)
+        return True, f"light change: {light_change_percent:.2f}%"
+    
+    if pressure_change_percent >= PRESSURE_THRESHOLD:
+        previous_sensor_values.update(current_data)
+        return True, f"pressure change: {pressure_change_percent:.2f}%"
+    
+    return False, None
+
 def send_mqtt_data():
     # Send mqtt data to broker
     while True:
         time.sleep(10)
         try:
-            sensor_data = {
-                "id": os.getenv("SHELF_ID"),
+            current_sensor_data = {
                 "humidity": globals.get_humidity(),
                 "temperature": globals.get_temperature(),
                 "light": globals.get_light(),
                 "pressure": globals.get_pressure()
             }
-            client.publish(os.getenv("MQTT_SENSOR_TOPIC"), json.dumps(sensor_data), retain=True)
+            
+            # Check if we should publish
+            should_publish, reason = should_publish_sensor_data(current_sensor_data)
+            
+            if should_publish:
+                sensor_data = {
+                    "id": os.getenv("SHELF_ID"),
+                    **current_sensor_data
+                }
+                client.publish(os.getenv("MQTT_SENSOR_TOPIC"), json.dumps(sensor_data), retain=True)
+                print(f"Published sensor data - Reason: {reason}")
+            
             if globals.get_shelf_lean() or globals.get_shelf_shake():
                 shelf_status = {
                     "id": os.getenv("SHELF_ID"),
