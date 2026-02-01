@@ -37,11 +37,37 @@ load_dotenv()
 # MQTT Client
 # Create MQTT client using WebSocket
 client = mqtt.Client(client_id=os.getenv("SHELF_ID"),transport="websockets")
+
+# MQTT Callbacks
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("✅ MQTT Connected successfully!")
+    else:
+        print(f"❌ MQTT Connection failed with code {rc}")
+
+def on_disconnect(client, userdata, rc):
+    if rc != 0:
+        print(f"⚠️ MQTT Unexpected disconnect: {rc}. Reconnecting...")
+        try:
+            client.reconnect()
+        except Exception as e:
+            print(f"❌ MQTT Reconnect failed: {e}")
+
+def on_publish(client, userdata, mid):
+    pass  # Silently confirm publish
+
+# Assign callbacks
+client.on_connect = on_connect
+client.on_disconnect = on_disconnect
+client.on_publish = on_publish
+
 # Connect to HiveMQ WebSocket broker (cloud)
 try:
     client.connect(os.getenv("BROKER_URL"), int(os.getenv("BROKER_PORT")), 60)
+    client.loop_start()  # Start background thread for network loop
+    print("🔄 MQTT background loop started")
 except Exception as e:
-    print("Error connecting to MQTT broker:", e)
+    print(f"❌ Error connecting to MQTT broker: {e}")
 # ADDRESS UUIDs
 BGM220_LOADCELL_1_ADDRESS = os.getenv("BGM220_LOADCELL_1_ADDRESS")
 BGM220_LOADCELL_2_ADDRESS = os.getenv("BGM220_LOADCELL_2_ADDRESS")
@@ -133,7 +159,7 @@ def should_publish_sensor_data(current_data):
 def send_mqtt_data():
     # Send mqtt data to broker
     while True:
-        time.sleep(5)
+        time.sleep(10)
         try:
             current_sensor_data = {
                 "humidity": globals.get_humidity(),
@@ -174,8 +200,8 @@ def send_mqtt_data():
                 print("Sent unpaid customer warning")
                 globals.set_unpaid_customer_warning(False)
         except Exception as e:
-            print("Stop send mqtt data.")
-            client.disconnect()
+            print(f"⚠️ MQTT publish error in send_mqtt_data: {e}")
+            # Don't disconnect - let auto-reconnect handle it
 
 def notification_handler_factory(device_name):
     def handler(sender, data):
@@ -296,11 +322,14 @@ def notification_handler_factory(device_name):
                 "values": new_data if isinstance(new_data, list) else [int(x) for x in new_data]
             }
             payload = json.dumps(mqtt_data)
-            client.publish(os.getenv("MQTT_LOADCELL_TOPIC"), payload, retain=True)
-            print(f"Send: {payload}")
+            msg_info = client.publish(os.getenv("MQTT_LOADCELL_TOPIC"), payload, qos=1, retain=True)
+            if msg_info.rc == mqtt.MQTT_ERR_SUCCESS:
+                print(f"⚖️  Loadcell published (mid={msg_info.mid})")
+            else:
+                print(f"⚠️ Loadcell publish failed: rc={msg_info.rc}")
         except Exception as e:
-            print("Stop send mqtt data.")
-            client.disconnect()
+            print(f"⚠️ MQTT loadcell publish error: {e}")
+            # Don't disconnect - let auto-reconnect handle it
 
     return handler
 
