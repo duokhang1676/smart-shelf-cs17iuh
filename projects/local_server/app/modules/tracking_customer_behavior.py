@@ -44,7 +44,7 @@ def start_tracking_customer_behavior():
     # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 416)
 
     ################# Jetson nano config #################
-    model_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/modules/detector/models/yolo11n-person-416-ver2.engine"))
+    model_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/modules/detector/models/yolo11n-person-640.engine"))
     model = YOLO(model_file_path)
     model.overrides['verbose'] = False
     # gst_pipeline = (

@@ -133,7 +133,7 @@ def should_publish_sensor_data(current_data):
 def send_mqtt_data():
     # Send mqtt data to broker
     while True:
-        time.sleep(10)
+        time.sleep(5)
         try:
             current_sensor_data = {
                 "humidity": globals.get_humidity(),
