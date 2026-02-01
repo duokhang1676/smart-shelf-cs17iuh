@@ -437,6 +437,21 @@ def send_data_to_devices(loop):
                         print(f"[{name}] Queued: {globals.rfid_state} to {CHAR_UUID_WRITE_SAVE_QUANTITY}")
                     except Exception as e:
                         print(f"[{name}] Failed to queue: {e}")
+                
+                # Send MQTT notification when product added successfully
+                try:
+                    product_added_data = {
+                        "id": os.getenv("SHELF_ID"),
+                        "event": "product_added",
+                        "rfid": globals.rfid,
+                        "verified_quantity": globals.get_verified_quantity(),
+                        "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    client.publish(os.getenv("MQTT_PRODUCT_ADDED_TOPIC"), 
+                                   json.dumps(product_added_data), retain=True)
+                    print(f"📦 Sent product added notification - RFID: {globals.rfid}")
+                except Exception as e:
+                    print(f"Failed to send product added MQTT: {e}")
             else: # Adding
                 globals.set_is_tracking(False)
                 
