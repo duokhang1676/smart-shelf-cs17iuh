@@ -1,0 +1,352 @@
+/* Mobile Responsive Utilities */
+
+/* Container and Layout */
+@media (max-width: 768px) {
+  /* Main container adjustments */
+  .container,
+  .MuiContainer-root {
+    max-width: 100% !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Grid system mobile */
+  .MuiGrid-container {
+    flex-direction: column;
+  }
+
+  .MuiGrid-item {
+    max-width: 100% !important;
+    flex-basis: 100% !important;
+  }
+
+  /* Card spacing */
+  .MuiCard-root,
+  .MuiPaper-root:not(.MuiDrawer-paper) {
+    margin-bottom: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Fix minWidth on Paper components */
+  .MuiPaper-root[style*="minWidth"]:not(.MuiDrawer-paper) {
+    min-width: 100% !important;
+  }
+
+  /* Stack spacing on mobile */
+  .MuiStack-root {
+    gap: 12px !important;
+  }
+
+  /* Box with flex - make it column on mobile */
+  .MuiBox-root {
+    box-sizing: border-box !important;
+  }
+
+  /* Prevent overflow on mobile */
+  * {
+    max-width: 100%;
+  }
+
+  /* Fix for inline styles with minWidth */
+  .css-phgwma-MuiPaper-root:not(.MuiDrawer-paper),
+  .MuiPaper-elevation:not(.MuiDrawer-paper):not(.MuiDialog-paper),
+  .MuiPaper-elevation3:not(.MuiDrawer-paper):not(.MuiDialog-paper) {
+    min-width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Form fields full width */
+  .MuiTextField-root,
+  .MuiFormControl-root {
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Button groups stack vertically */
+  .MuiButtonGroup-root {
+    flex-direction: column !important;
+  }
+
+  .MuiButtonGroup-root .MuiButton-root {
+    width: 100% !important;
+  }
+
+  /* Dialog full screen on mobile */
+  .MuiDialog-paper {
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px !important;
+  }
+
+  /* Table overflow scroll */
+  .MuiTableContainer-root {
+    overflow-x: auto !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  .MuiTable-root {
+    min-width: 650px !important;
+  }
+
+  /* Hide table columns on small screens - add class to hide */
+  .mobile-hide {
+    display: none !important;
+  }
+
+  /* Tabs scrollable on mobile */
+  .MuiTabs-root {
+    max-width: 100vw !important;
+  }
+
+  .MuiTabs-scroller {
+    overflow-x: auto !important;
+  }
+
+  /* Stack buttons vertically */
+  .button-group,
+  .action-buttons {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .button-group .MuiButton-root,
+  .action-buttons .MuiButton-root {
+    width: 100% !important;
+  }
+
+  /* Image and media responsive */
+  img,
+  .MuiCardMedia-root {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Chip sizing */
+  .MuiChip-root {
+    font-size: 0.75rem !important;
+    height: 24px !important;
+  }
+
+  /* List items compact */
+  .MuiListItem-root {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* AppBar title */
+  .MuiToolbar-root .MuiTypography-h6 {
+    font-size: 1rem !important;
+  }
+
+  /* Menu items touch friendly */
+  .MuiMenuItem-root {
+    min-height: 44px !important;
+  }
+
+  /* Drawer mobile width */
+  .MuiDrawer-paper {
+    max-width: 85vw !important;
+  }
+}
+
+/* Small mobile devices (< 480px) */
+@media (max-width: 480px) {
+  /* Extra small padding */
+  .container,
+  .MuiContainer-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  /* Smaller typography */
+  .MuiTypography-h3 {
+    font-size: 1.5rem !important;
+  }
+
+  .MuiTypography-h4 {
+    font-size: 1.25rem !important;
+  }
+
+  .MuiTypography-h5 {
+    font-size: 1.1rem !important;
+  }
+
+  .MuiTypography-h6 {
+    font-size: 1rem !important;
+  }
+
+  .MuiTypography-body1 {
+    font-size: 0.875rem !important;
+  }
+
+  .MuiTypography-body2 {
+    font-size: 0.75rem !important;
+  }
+
+  /* Smaller buttons */
+  .MuiButton-root {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .MuiIconButton-root {
+    padding: 8px !important;
+  }
+
+  /* Dialog nearly full screen */
+  .MuiDialog-paper {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px !important;
+  }
+
+  /* Table even more compact */
+  .MuiTableCell-root {
+    padding: 8px 4px !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Compact list */
+  .MuiList-root {
+    padding: 4px 0 !important;
+  }
+
+  .MuiListItem-root {
+    padding: 6px 8px !important;
+  }
+
+  .MuiListItemText-primary {
+    font-size: 0.875rem !important;
+  }
+
+  .MuiListItemText-secondary {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Tablet landscape (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .MuiContainer-root {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .MuiGrid-item {
+    padding: 8px !important;
+  }
+}
+
+/* Utility classes for responsive visibility */
+.hide-on-mobile {
+  display: block;
+}
+
+.show-on-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .show-on-mobile {
+    display: block !important;
+  }
+
+  .show-on-mobile-flex {
+    display: flex !important;
+  }
+
+  .show-on-mobile-inline {
+    display: inline !important;
+  }
+}
+
+/* Touch-friendly elements */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase tap target size */
+  .MuiButton-root,
+  .MuiIconButton-root,
+  .MuiChip-root,
+  a,
+  button {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Remove hover effects on touch devices */
+  .MuiButton-root:hover,
+  .MuiIconButton-root:hover {
+    background-color: transparent !important;
+  }
+
+  /* Larger input fields */
+  .MuiInputBase-input {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 12px !important;
+  }
+}
+
+/* Landscape mobile orientation */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Reduce vertical padding */
+  .MuiDialog-paper {
+    max-height: 90vh !important;
+  }
+
+  .MuiAppBar-root {
+    min-height: 48px !important;
+  }
+
+  .MuiToolbar-root {
+    min-height: 48px !important;
+  }
+}
+
+/* Special handling for shelf/grid views */
+@media (max-width: 768px) {
+  /* Shelf compartments responsive */
+  .shelf-compartment,
+  .product-card {
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Product grid - 2 columns on mobile */
+  .product-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Statistics cards stack */
+  .stats-card,
+  .stat-card {
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Charts responsive */
+  .chart-container,
+  .recharts-wrapper {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 250px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Single column on small mobile */
+  .product-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Smaller charts */
+  .chart-container,
+  .recharts-wrapper {
+    min-height: 200px !important;
+  }
+}

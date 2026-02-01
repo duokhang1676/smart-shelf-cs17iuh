@@ -1,0 +1,167 @@
+/* Root element styles moved to index.css to avoid conflicts */
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  /* Mobile-specific overrides if needed */
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+@media (max-width: 768px) {
+  .logo {
+    height: 4em;
+    padding: 1em;
+  }
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 1em;
+  }
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* Mobile Navigation & Layout */
+@media (max-width: 768px) {
+  .MuiToolbar-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    min-height: 56px !important;
+  }
+
+  .MuiButton-root {
+    padding: 6px 8px !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Grid responsive */
+  .MuiGrid-container {
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .MuiGrid-item {
+    padding: 4px !important;
+  }
+
+  /* Paper/Card spacing */
+  .MuiPaper-root {
+    margin: 8px 0 !important;
+  }
+
+  /* Dialog responsive */
+  .MuiDialog-paper {
+    margin: 16px !important;
+    max-width: calc(100% - 32px) !important;
+  }
+
+  /* Typography */
+  h1, .MuiTypography-h1 {
+    font-size: 2rem !important;
+  }
+
+  h2, .MuiTypography-h2 {
+    font-size: 1.75rem !important;
+  }
+
+  h3, .MuiTypography-h3 {
+    font-size: 1.5rem !important;
+  }
+
+  h4, .MuiTypography-h4 {
+    font-size: 1.25rem !important;
+  }
+
+  h5, .MuiTypography-h5 {
+    font-size: 1.1rem !important;
+  }
+
+  h6, .MuiTypography-h6 {
+    font-size: 1rem !important;
+  }
+
+  /* Table responsive */
+  .MuiTableContainer-root {
+    overflow-x: auto !important;
+  }
+
+  .MuiTable-root {
+    min-width: 100% !important;
+  }
+
+  /* Drawer responsive */
+  .MuiDrawer-paper {
+    width: 85vw !important;
+    max-width: 300px !important;
+  }
+}
+
+/* Tablet breakpoint */
+@media (max-width: 1024px) and (min-width: 769px) {
+  #root {
+    padding: 1rem;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  #root {
+    padding: 0.25rem;
+  }
+
+  .MuiButton-root {
+    padding: 4px 6px !important;
+    font-size: 0.75rem !important;
+    min-width: 40px !important;
+  }
+
+  .MuiIconButton-root {
+    padding: 6px !important;
+  }
+
+  .MuiTextField-root {
+    margin: 4px 0 !important;
+  }
+
+  h1, .MuiTypography-h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2, .MuiTypography-h2 {
+    font-size: 1.25rem !important;
+  }
+}
