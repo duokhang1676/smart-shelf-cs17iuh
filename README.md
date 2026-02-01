@@ -10,6 +10,20 @@ The **Smart Vending Shelf** system enables real-time inventory tracking, detects
 
 ---
 
+## Live Demo & Resources
+
+🌐 **Web Management Dashboard:** [https://smart-shelf-server-frontend.vercel.app/](https://smart-shelf-server-frontend.vercel.app/)
+
+🔌 **Backend API:** [https://smart-shelf-server-backend.onrender.com](https://smart-shelf-server-backend.onrender.com)
+
+📄 **Setup Guide:** [WiFi & Banking Configuration (config_wifi_sepay.docx)](resources/documents/config_wifi_sepay.docx)
+
+📸 **Real Hardware Photo:**
+
+![Smart Shelf Hardware](resources/images/smart-shelf.jpg)
+
+---
+
 ## How to use the template
 
 * Create your software projects under the `projects/` folder.
