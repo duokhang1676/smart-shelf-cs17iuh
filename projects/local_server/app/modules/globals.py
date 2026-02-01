@@ -17,7 +17,7 @@ import threading
 import numpy as np
 import os
 from app.utils.file_utils import read_file
-from app.modules.cloud_sync import load_rfids_from_cloud, load_combo_from_cloud, load_posters_from_cloud
+from app.modules.cloud_sync import load_rfids_from_cloud, load_combo_from_cloud, load_posters_from_cloud, load_sepay_info_from_cloud
 from app.utils.string_utils import remove_accents
 
 # Define loadcell configuration
@@ -25,12 +25,58 @@ LOADCELL_NUM_1 = 8
 LOADCELL_NUM_2 = 7
 LOADCELL_NUM_TOTAL = LOADCELL_NUM_1 + LOADCELL_NUM_2
 
+# Load Sepay info from JSON
+def load_sepay_info():
+    """Load Sepay configuration from sepay_info.json"""
+    sepay_info_path = os.path.abspath(os.path.join(__file__, "../../..", "database/sepay_info.json"))
+    try:
+        data = read_file(sepay_info_path)
+        # Map camelCase fields from JSON to UPPER_SNAKE_CASE
+        return {
+            "VIETQR_ACCOUNT_NO": data.get("vietqrAccountNo", ""),
+            "VIETQR_ACCOUNT_NAME": data.get("vietqrAccountName", ""),
+            "VIETQR_ACQ_ID": data.get("vietqrAcqId", ""),
+            "SEPAY_AUTH_TOKEN": data.get("sepayAuthToken", ""),
+            "SEPAY_BANK_ACCOUNT_ID": data.get("sepayBankAccountId", "")
+        }
+    except Exception as e:
+        print(f"Warning: Could not load sepay_info.json: {e}")
+        return {
+            "VIETQR_ACCOUNT_NO": "",
+            "VIETQR_ACCOUNT_NAME": "",
+            "VIETQR_ACQ_ID": "",
+            "SEPAY_AUTH_TOKEN": "",
+            "SEPAY_BANK_ACCOUNT_ID": ""
+        }
+
+def reload_sepay_info():
+    """Reload Sepay info from JSON file (call after cloud sync)"""
+    global sepay_info
+    sepay_info = load_sepay_info()
+    print("Sepay info reloaded from sepay_info.json")
+
+# Global Sepay configuration
+sepay_info = load_sepay_info()
+
 # Functions to extract product attributes
 def load_weight_of_one(products_data):
     return [int(p["weight"] / 3) for p in products_data]
 
 def load_products_price(products_data):
-    return [int(p["price"] / 1000) for p in products_data]
+    """Calculate product prices with discount applied"""
+    prices = []
+    for p in products_data:
+        original_price = p["price"]
+        discount = p.get("discount", 0)
+        
+        # Apply discount if exists
+        if discount > 0:
+            discounted_price = original_price * (1 - discount / 100)
+            prices.append(int(discounted_price / 1000))
+        else:
+            prices.append(int(original_price / 1000))
+    
+    return prices
 
 def load_products_name(products_data):
     products_name = [
@@ -93,8 +139,8 @@ products_name_decimal, products_name_char_count = load_products_name_decimal(pro
 
 voice_command = None
 
-threatshold_imu_lean = 50
-threatshold_imu_shake = 90
+threatshold_imu_lean = 40
+threatshold_imu_shake = 70
 imu_data_init = None
 shelf_lean = False
 shelf_shake = False
@@ -490,7 +536,24 @@ def set_unpaid_customer_warning(new_warning):
 
 
 
-# Load data from cloud 
-load_rfids_from_cloud()
-load_posters_from_cloud()
-load_combo_from_cloud()
+# Load data from cloud (non-blocking, falls back to local data)
+try:
+    load_rfids_from_cloud()
+except Exception as e:
+    print(f"Could not load RFIDs from cloud: {e}. Using local data.")
+
+try:
+    load_posters_from_cloud()
+except Exception as e:
+    print(f"Could not load posters from cloud: {e}. Using local data.")
+
+try:
+    load_combo_from_cloud()
+except Exception as e:
+    print(f"Could not load combos from cloud: {e}. Using local data.")
+
+try:
+    load_sepay_info_from_cloud()
+    reload_sepay_info()
+except Exception as e:
+    print(f"Could not load sepay info from cloud: {e}. Using local data.")

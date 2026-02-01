@@ -394,6 +394,23 @@ class NavigationUtils {
                     this.updateCartBadge();
                 });
 
+                // Listen for employee adding event - redirect to shelf page if not already there
+                this.socket.on('employee_adding_max_quantity', (data) => {
+                    console.log('🔔 Navigation received employee_adding_max_quantity:', data);
+                    
+                    // Lock navigation immediately when entering adding mode
+                    if (typeof window.lockNavigation === 'function') {
+                        window.lockNavigation();
+                        console.log('Navigation locked during employee adding');
+                    }
+                    
+                    // Redirect to shelf page if not already there
+                    if (window.location.pathname !== '/shelf') {
+                        console.log('Redirecting to shelf page for employee adding...');
+                        window.location.href = data.url || '/shelf';
+                    }
+                });
+
             } catch (error) {
                 console.log('WebSocket setup failed:', error);
             }

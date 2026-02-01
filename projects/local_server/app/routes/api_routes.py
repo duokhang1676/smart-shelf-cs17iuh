@@ -136,8 +136,95 @@ def api_rfid_state():
 
 @api_bp.route('/products')
 def api_products():
-    cart = get_cart()
-    return jsonify(cart)
+    """Get all products with their current taken_quantity and discount info"""
+    try:
+        # Get current taken quantities
+        taken_quantity = globals.get_taken_quantity()
+        
+        # Load fresh product data from database
+        from app.utils.database_utils import load_products_from_json
+        products = load_products_from_json()
+        
+        # Merge taken_quantity and calculate discount pricing
+        for i, product in enumerate(products):
+            if i < len(taken_quantity):
+                product['qty'] = taken_quantity[i]
+            else:
+                product['qty'] = 0
+            
+            # Calculate discounted price if discount exists
+            original_price = product.get('price', 0)
+            discount = product.get('discount', 0)
+            
+            if discount > 0:
+                discounted_price = original_price * (1 - discount / 100)
+                discounted_price = round(discounted_price)  # Round to nearest integer
+                product['original_price'] = original_price  # Store original price
+                product['price'] = discounted_price  # Update with discounted price
+            else:
+                product['original_price'] = original_price  # Store same as price if no discount
+        
+        return jsonify(products)
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to get products: {e}")
+        # Fallback to loading from database only
+        from app.utils.database_utils import load_products_from_json
+        return jsonify(load_products_from_json())
+
+@api_bp.route('/cart')
+def api_cart():
+    """Get current cart based on real-time taken_quantity and fresh product data"""
+    try:
+        # Get current taken quantities
+        taken_quantity = globals.get_taken_quantity()
+        
+        # Load fresh product data from database
+        from app.utils.database_utils import load_products_from_json
+        products = load_products_from_json()
+        
+        # Build cart from taken_quantity
+        cart = []
+        for i, qty in enumerate(taken_quantity):
+            if qty > 0 and i < len(products):
+                product = products[i]
+                original_price = product.get('price', 0)
+                discount = product.get('discount', 0)
+                
+                # Calculate discounted price if discount exists
+                if discount > 0:
+                    discounted_price = original_price * (1 - discount / 100)
+                    discounted_price = round(discounted_price)  # Round to nearest integer
+                else:
+                    discounted_price = original_price
+                
+                cart.append({
+                    'position': i,
+                    'quantity': qty,
+                    'qty': qty,  # Legacy compatibility
+                    'product_id': product.get('product_id'),
+                    'product_name': product.get('product_name'),
+                    'price': discounted_price,  # Use discounted price
+                    'original_price': original_price,  # Always store original for comparison
+                    'discount': discount,
+                    'img_url': product.get('img_url'),
+                    'weight': product.get('weight'),
+                    'max_quantity': product.get('max_quantity', 0)
+                })
+        
+        # Apply combo pricing if any
+        from app.utils.loadcell_utils import update_cart_with_combo_pricing
+        cart_with_combo, applied_combos = update_cart_with_combo_pricing(cart)
+        
+        # Update app config cache for consistency
+        current_app.config['cart'] = cart_with_combo
+        
+        return jsonify(cart_with_combo)
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to get cart: {e}")
+        # Fallback to cached cart if error
+        return jsonify(get_cart())
 
 @api_bp.route('/cart/set', methods=['POST'])
 def set_cart_api():
@@ -292,9 +379,22 @@ def process_cart():
                 ]
             }), 200  # Return 200 instead of 400 for empty cart
         
-        # Apply combo pricing and calculate total
+        # First, apply individual discounts to all cart items
+        for item in cart:
+            original_price = item.get('original_price') or item.get('price', 0)
+            discount = item.get('discount', 0)
+            
+            # Apply discount if exists and price hasn't been discounted yet
+            if discount > 0 and item.get('price', 0) == original_price:
+                discounted_price = original_price * (1 - discount / 100)
+                discounted_price = round(discounted_price)
+                item['price'] = discounted_price
+                if 'original_price' not in item:
+                    item['original_price'] = original_price
+        
+        # Then apply combo pricing and calculate total
         updated_cart, applied_combos = detect_and_apply_combo_pricing(cart)
-        total, breakdown = calculate_cart_total_with_combos(cart)
+        total, breakdown = calculate_cart_total_with_combos(updated_cart)
         
         valid_items = []
         invalid_items = []
@@ -591,7 +691,9 @@ def get_cart_combo_info():
 def apply_combos_to_cart():
     """Manually apply combo pricing to current cart"""
     try:
-        cart = get_cart()
+        # Get cart from request body instead of global cart
+        data = request.get_json()
+        cart = data.get('cart_items', []) if data else []
         
         if not cart:
             return jsonify({
@@ -604,19 +706,19 @@ def apply_combos_to_cart():
         updated_cart, applied_combos = detect_and_apply_combo_pricing(cart)
         total, breakdown = calculate_cart_total_with_combos(cart)
         
-        # Update cart in app config
-        set_cart(updated_cart)
+        # Don't update global cart - just return the combo-applied cart
+        # set_cart(updated_cart)
         
-        # Emit WebSocket update
-        socketio = current_app.extensions.get('socketio')
-        if socketio:
-            from app.utils.websocket_utils import emit_loadcell_update
-            emit_loadcell_update(socketio, globals.loadcell_quantity, updated_cart)
+        # Don't emit WebSocket update - this is just a calculation endpoint
+        # socketio = current_app.extensions.get('socketio')
+        # if socketio:
+        #     from app.utils.websocket_utils import emit_loadcell_update
+        #     emit_loadcell_update(socketio, globals.loadcell_quantity, updated_cart)
         
         return jsonify({
             'success': True,
             'message': f'Applied {len(applied_combos)} combo(s) to cart',
-            'cart': updated_cart,
+            'cart_items': updated_cart,  # Changed from 'cart' to 'cart_items' to match frontend
             'applied_combos': applied_combos,
             'total_savings': breakdown['combo_savings'],
             'original_total': breakdown['subtotal'],
@@ -771,25 +873,30 @@ def print_to_terminal():
     
 @api_bp.route('/added-product', methods=['POST'])
 def added_products():
-    """Print message to server terminal"""
+    """Complete adding products - triggered by button click"""
     try:
         data = request.json
         message = data.get('message', '')
         
-        globals.set_rfid_state(0)  # Set RFID state back to 0 (added/idle)
+        # Set RFID state back to 0 (added/idle)
+        globals.set_rfid_state(0)
+        
+        # Set bool_rfid_devices to True to trigger the state monitor
+        globals.set_bool_rfid_devices(True)
+        
         if message:
-            print(message)  # Print to terminal
-            return jsonify({
-                'success': True,
-                'message': f'Printed to terminal: {message}'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'No message provided'
-            }), 400
+            print(f"[SHELF] {message}")  # Print to terminal
+        
+        print(f"[SHELF] Complete adding: rfid_state=0, bool_rfid_devices=True")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Complete adding products. State updated.',
+            'rfid_state': 0
+        })
             
     except Exception as e:
+        print(f"[ERROR] Failed to complete adding: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @api_bp.route('/slideshow-images/manage', methods=['GET', 'POST', 'DELETE'])

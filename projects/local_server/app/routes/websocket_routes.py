@@ -95,7 +95,7 @@ def register_websocket_handlers(socketio, get_cart_func):
         client_id = request.sid
         if client_id in connected_clients:
             connected_clients.remove(client_id)
-            print(f"Client {client_id} disconnected and removed from tracking")
+            # print(f"Client {client_id} disconnected and removed from tracking")
 
     @socketio.on('request_cart_update')
     def handle_cart_request():
@@ -174,13 +174,14 @@ def register_websocket_handlers(socketio, get_cart_func):
                 print(f'WebSocket QR generation successful for order {order_id}')
                 
                 # Auto-start payment monitoring after QR generation
-                print(f'Auto-starting payment monitoring for order {order_id}')
-                auto_start_payment_monitoring(
-                    socketio, 
-                    order_id, 
-                    total, 
-                    data.get('products', [])
-                )
+                # COMMENTED OUT - Using webhook listener instead of polling
+                # print(f'Auto-starting payment monitoring for order {order_id}')
+                # auto_start_payment_monitoring(
+                #     socketio, 
+                #     order_id, 
+                #     total, 
+                #     data.get('products', [])
+                # )
                 
             except Exception as e:
                 print(f'WebSocket QR generation failed for order {order_id}: {e}')
@@ -204,8 +205,10 @@ def register_websocket_handlers(socketio, get_cart_func):
         def payment_monitoring_task():
             print(f'Starting {monitoring_type} payment monitoring for order {order_id}, total {total}')
             
-            SEPAY_AUTH_TOKEN = os.getenv("SEPAY_AUTH_TOKEN")
-            SEPAY_BANK_ACCOUNT_ID = os.getenv("SEPAY_BANK_ACCOUNT_ID")
+            # Load Sepay config from globals
+            sepay_config = globals.sepay_info
+            SEPAY_AUTH_TOKEN = sepay_config.get("SEPAY_AUTH_TOKEN", "")
+            SEPAY_BANK_ACCOUNT_ID = sepay_config.get("SEPAY_BANK_ACCOUNT_ID", "")
             add_info = f"Pay for snack machine {order_id}"  # Match with QR generation content
             
             # Debug SEPAY configuration
@@ -216,8 +219,8 @@ def register_websocket_handlers(socketio, get_cart_func):
             
             print(f'Looking for payment with content: "{add_info}" or order_id: "{order_id}"')
             
-            timeout = 100  # 100 seconds
-            interval = 1.5   
+            timeout = 300  # 300 seconds (5 minutes)
+            interval = 0.3   # Check every 0.3 seconds for fastest response
             start = time.time()
             check_count = 0
             
@@ -239,15 +242,15 @@ def register_websocket_handlers(socketio, get_cart_func):
                         'remaining_time': remaining_time
                     })
                 
-                print(f'{monitoring_type} payment check #{check_count} for order {order_id}...')
+                # print(f'{monitoring_type} payment check #{check_count} for order {order_id}...')  # Commented out - webhook handles payment verification
                 
                 success, tx = VietQRPaymentAPI.check_sepay_payment(
                     SEPAY_AUTH_TOKEN, SEPAY_BANK_ACCOUNT_ID, total, add_info, order_id
                 )
                 
-                print(f'Check result: success={success}, tx_found={tx is not None}')
-                if tx:
-                    print(f'Transaction content: {tx.get("transaction_content", "N/A")}')
+                # print(f'Check result: success={success}, tx_found={tx is not None}')  # Commented out - webhook handles payment verification
+                # if tx:  # Commented out - webhook handles payment verification
+                #     print(f'Transaction content: {tx.get("transaction_content", "N/A")}')
                 
                 # Handle authorization issues
                 if success == "unauthorized":
@@ -259,17 +262,34 @@ def register_websocket_handlers(socketio, get_cart_func):
                         # Don't break, continue monitoring in case manual test is triggered
                 
                 if success and tx and order_id in tx.get('transaction_content', ''):
-                    # Save order and order_detail to JSON file when payment is successful    
+                    # Save order and order_detail to JSON file when payment is successful
+                    print(f'DEBUG: Creating order details from products: {products}')
+                    
                     order_details = []
                     order_details_products_name = []
                     for p in products:
-                        order_details_products_name.append(remove_accents(p.get('product_name', '')))
+                        product_id = p.get('product_id', p.get('_id', ''))
+                        product_name = p.get('product_name', '')
+                        qty = p.get('qty', 0)
+                        price = p.get('price', 0)
+                        
+                        # Debug log for each product
+                        print(f'DEBUG: Processing product - ID: {product_id}, Name: {product_name}, Qty: {qty}, Price: {price}')
+                        
+                        # Skip products with missing critical data
+                        if not product_id or qty <= 0:
+                            print(f'WARNING: Skipping product with missing data - ID: {product_id}, Qty: {qty}')
+                            continue
+                        
+                        order_details_products_name.append(remove_accents(product_name))
                         order_details.append({
-                            'product_id': p.get('product_id', p.get('_id', '')),
-                            'quantity': p['qty'],
-                            'price': p.get('price', 0),
-                            'total_price': p['qty'] * p.get('price', 0)
+                            'product_id': product_id,
+                            'quantity': qty,
+                            'price': price,
+                            'total_price': qty * price
                         })
+                    
+                    print(f'DEBUG: Created {len(order_details)} order details')
 
                     shelf_id = os.getenv("SHELF_ID_CLOUD")
                     order_data = {
@@ -278,7 +298,14 @@ def register_websocket_handlers(socketio, get_cart_func):
                         'shelf_id': shelf_id,
                         'total_bill': total,
                         'orderDetails': order_details
-                    }       
+                    }
+                    
+                    print(f'DEBUG: Final order_data to send to cloud:')
+                    print(f'  - Order ID: {order_id}')
+                    print(f'  - Total: {total}')
+                    print(f'  - Order Details Count: {len(order_details)}')
+                    print(f'  - Order Details: {order_details}')
+                    
                     print(f'{monitoring_type} payment successful! Order {order_id}, transaction: {tx.get("id", "N/A")}')
                     
                     # Set payment verified to True
@@ -608,7 +635,7 @@ def register_websocket_handlers(socketio, get_cart_func):
         """Handle slideshow page leave - stop tracking quantity changes"""
         from app.modules.quantity_change_monitor import set_slideshow_status
         set_slideshow_status(False)
-        print("User left slideshow page - quantity change tracking disabled")
+        # print("User left slideshow page - quantity change tracking disabled")
 
     # RFID State monitoring events
     @socketio.on('employee_adding_max_quantity')

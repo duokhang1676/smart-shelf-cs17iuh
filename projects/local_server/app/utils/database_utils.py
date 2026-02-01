@@ -109,6 +109,24 @@ def load_all_combos_from_json():
         return []
 
 
+def get_product_price_with_discount(product_data):
+    """
+    Calculate product price with discount applied
+    Returns (original_price, discounted_price)
+    """
+    original_price = product_data.get('price', 0)
+    discount = product_data.get('discount', 0)
+    
+    if discount > 0:
+        # discount is in percentage (e.g., 50 = 50%)
+        discounted_price = original_price * (1 - discount / 100)
+        discounted_price = round(discounted_price)  # Round to nearest integer
+    else:
+        discounted_price = original_price
+    
+    return original_price, discounted_price
+
+
 def detect_and_apply_combo_pricing(cart_items):
     """
     Detect combo products in cart and apply combo pricing
@@ -162,12 +180,22 @@ def detect_and_apply_combo_pricing(cart_items):
                 free_items = eligible_sets * get_quantity
                 
                 if eligible_sets > 0:
-                    # Calculate pricing
-                    product_price = product_lookup[promo_product_id]['price']
+                    # Get prices - cart item already has discount applied
+                    # But original_price should be from product database (before any discount)
+                    product_data = product_lookup.get(promo_product_id, {})
+                    true_original_price, discounted_price_per_item = get_product_price_with_discount(product_data)
+                    
+                    # Use cart item price if available (it should already have discount applied)
+                    # Otherwise use calculated discounted price
+                    current_price_per_item = cart_item.get('price', discounted_price_per_item)
+                    
                     total_items = current_qty + free_items
-                    total_original_price = total_items * product_price
-                    discounted_price = current_qty * product_price  # Only pay for bought items
-                    total_savings = free_items * product_price
+                    # Total if customer paid for all items (including free ones) at current price
+                    total_original_price = total_items * current_price_per_item
+                    # Actual price customer pays (only for bought items)
+                    actual_price = current_qty * current_price_per_item
+                    # Savings from free items
+                    total_savings = free_items * current_price_per_item
                     
                     combo_info = {
                         'combo_id': combo['id'],
@@ -179,7 +207,7 @@ def detect_and_apply_combo_pricing(cart_items):
                         'free_items': free_items,
                         'total_items': total_items,
                         'original_total': total_original_price,
-                        'discounted_total': discounted_price,
+                        'discounted_total': actual_price,
                         'savings': total_savings,
                         'product_ids': [promo_product_id]
                     }
@@ -190,14 +218,18 @@ def detect_and_apply_combo_pricing(cart_items):
                         if (item.get('product_id') == promo_product_id or 
                             str(item.get('id')) == str(promo_product_id)):
                             updated_cart[j] = item.copy()
-                            updated_cart[j]['original_price'] = product_price
+                            # Set original_price to TRUE original (from database before any discount)
+                            updated_cart[j]['original_price'] = true_original_price
+                            # Store the price AFTER individual discount but BEFORE combo
+                            updated_cart[j]['discounted_price'] = current_price_per_item
                             updated_cart[j]['original_qty'] = current_qty
                             updated_cart[j]['free_qty'] = free_items
                             updated_cart[j]['total_qty'] = total_items
                             updated_cart[j]['qty'] = total_items  # Update displayed quantity
                             updated_cart[j]['quantity'] = total_items
-                            updated_cart[j]['effective_price'] = discounted_price / total_items if total_items > 0 else 0
-                            updated_cart[j]['price'] = discounted_price / total_items if total_items > 0 else 0
+                            # Effective price per item (including free items)
+                            updated_cart[j]['effective_price'] = actual_price / total_items if total_items > 0 else 0
+                            updated_cart[j]['price'] = actual_price / total_items if total_items > 0 else 0
                             updated_cart[j]['in_combo'] = combo_info
                             updated_cart[j]['promotion_type'] = 'buy_x_get_y'
                             updated_cart[j]['savings'] = total_savings
@@ -205,11 +237,18 @@ def detect_and_apply_combo_pricing(cart_items):
         
         elif combo_products_set.issubset(cart_product_ids):
             # Regular combo pricing (existing logic)
-            # Calculate original price vs combo price
+            # Calculate original price vs combo price - use cart prices (with individual discount already applied)
             original_total = 0
             for product_id in combo_products:
-                if str(product_id) in product_lookup:
-                    original_total += product_lookup[str(product_id)]['price']
+                if str(product_id) in cart_by_product_id:
+                    # Use price from cart (already includes individual discount)
+                    cart_price = cart_by_product_id[str(product_id)].get('price', 0)
+                    original_total += cart_price
+                elif str(product_id) in product_lookup:
+                    # Fallback: calculate price with discount from product database
+                    product_data = product_lookup[str(product_id)]
+                    _, discounted_price = get_product_price_with_discount(product_data)
+                    original_total += discounted_price
             
             combo_price = combo['price']
             savings = original_total - combo_price
@@ -234,22 +273,29 @@ def detect_and_apply_combo_pricing(cart_items):
             for i, product_id in enumerate(combo_products):
                 if str(product_id) in cart_by_product_id:
                     cart_item = cart_by_product_id[str(product_id)]
-                    original_item_price = product_lookup[str(product_id)]['price']
+                    product_data = product_lookup.get(str(product_id), {})
+                    
+                    # Get true original price (before any discount) and discounted price
+                    true_original_price, discounted_price = get_product_price_with_discount(product_data)
+                    
+                    # Use cart price if available (should already have individual discount)
+                    # This is the price AFTER individual discount but BEFORE combo
+                    current_item_price = cart_item.get('price', discounted_price)
                     
                     # Calculate proportional combo price for this item
                     if i == len(combo_products) - 1:
                         # Last item gets remaining amount to avoid rounding errors
                         combo_item_price = combo_price - total_distributed
                     else:
-                        proportion = original_item_price / original_total
+                        proportion = current_item_price / original_total if original_total > 0 else 0
                         combo_item_price = round(combo_price * proportion)
                         total_distributed += combo_item_price
                     
                     combo_items.append({
                         'product_id': product_id,
-                        'original_price': original_item_price,
+                        'original_price': current_item_price,  # Price after individual discount
                         'combo_price': combo_item_price,
-                        'savings': original_item_price - combo_item_price
+                        'savings': current_item_price - combo_item_price
                     })
                     
                     # Update the cart item
@@ -257,11 +303,14 @@ def detect_and_apply_combo_pricing(cart_items):
                         if (item.get('product_id') == product_id or 
                             str(item.get('id')) == str(product_id)):
                             updated_cart[j] = item.copy()
-                            updated_cart[j]['original_price'] = original_item_price
+                            # Set TRUE original price (from database, before any discount)
+                            updated_cart[j]['original_price'] = true_original_price
+                            # Store price after individual discount but before combo
+                            updated_cart[j]['discounted_price'] = current_item_price
                             updated_cart[j]['combo_price'] = combo_item_price
-                            updated_cart[j]['price'] = combo_item_price  # Use combo price
+                            updated_cart[j]['price'] = combo_item_price  # Final price (combo price)
                             updated_cart[j]['in_combo'] = combo_info
-                            updated_cart[j]['savings'] = original_item_price - combo_item_price
+                            updated_cart[j]['savings'] = current_item_price - combo_item_price
                             break
             
             # Update combo_info with exact item breakdown
@@ -324,10 +373,16 @@ def calculate_cart_total_with_combos(cart_items):
             # Regular item or regular combo
             item_total = item_price * quantity
             
-            # Track savings if item is in combo
+            # Calculate savings for this item
+            item_savings = 0
             if 'savings' in item:
+                # Item is in combo - use combo savings
                 item_savings = item['savings'] * quantity
-                total_savings += item_savings
+            elif item.get('original_price') and item.get('original_price') > item_price:
+                # Item has individual discount (not in combo)
+                item_savings = (item['original_price'] - item_price) * quantity
+            
+            total_savings += item_savings
             
             breakdown['items'].append({
                 'name': item.get('product_name', 'Unknown'),
@@ -336,7 +391,7 @@ def calculate_cart_total_with_combos(cart_items):
                 'total': item_total,
                 'original_price': item.get('original_price'),
                 'in_combo': item.get('in_combo', {}).get('combo_name') if 'in_combo' in item else None,
-                'savings': item.get('savings', 0) * quantity
+                'savings': item_savings
             })
             
             total += item_total

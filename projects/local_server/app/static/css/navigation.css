@@ -407,3 +407,20 @@ body::before {
     background: #3498db;
     animation: pulse 1s infinite;
 }
+
+/* Lock navigation during RFID adding mode */
+.rfid-adding-mode .nav-link:not(.active) {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.rfid-adding-mode .nav-link:not(.active):hover {
+    transform: none;
+    background: transparent;
+}
+
+.rfid-adding-mode .nav-dropdown {
+    pointer-events: none;
+    opacity: 0.5;
+}

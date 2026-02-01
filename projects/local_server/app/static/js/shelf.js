@@ -26,7 +26,7 @@ let rfidInput = '';
 let rfidTimeout = null;
 
 // DOM elements
-let rfidIndicator, rfidInputDisplay, rfidInputText, completeAddingContainer, completeAddingButton;
+let rfidIndicator, rfidInputDisplay, rfidInputText;
 
 // Initialize page when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -34,13 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
     rfidIndicator = document.getElementById('rfidIndicator');
     rfidInputDisplay = document.getElementById('rfidInputDisplay');
     rfidInputText = document.getElementById('rfidInputText');
-    completeAddingContainer = document.getElementById('completeAddingContainer');
-    completeAddingButton = document.getElementById('completeAddingButton');
-    
-    // Add event listener for complete adding button
-    if (completeAddingButton) {
-        completeAddingButton.addEventListener('click', handleCompleteAdding);
-    }
     
     // Use existing socket or create new one
     if (window.NavigationUtils && window.navigation && window.navigation.socket) {
@@ -87,25 +80,36 @@ function initializeWebSocket() {
     });
     
     // Listen for loadcell updates (for real-time shelf status)
-    // socket.on('loadcell_update', function(data) {
-    //     console.log('Loadcell update received');
-    //     updateLoadcellTotal(); // Update the total when loadcell data changes
-    //     updateMaxQuantityInfo(); // Update individual max_quantity info
+    socket.on('loadcell_update', function(data) {
+        console.log('Loadcell update received on shelf page');
         
-    //     // Check for taken quantity changes and redirect to cart
-    //     if (data.taken_quantity && Array.isArray(data.taken_quantity)) {
-    //         const currentTakenQuantities = data.taken_quantity;
-            
-    //         // Check if any product has been taken (taken quantity > 0)
-    //         const hasProductTaken = currentTakenQuantities.some(qty => qty > 0);
-    //         console.log('Has product taken:', hasProductTaken, 'Current quantities:', currentTakenQuantities);
-            
-    //         if (hasProductTaken) {
-    //             console.log('Product taken detected on shelf page, redirecting to cart page...');
-    //             window.location.href = '/cart';
-    //         }
-    //     }
-    // });
+        // Always update the display when loadcell data changes
+        updateLoadcellTotal(); // Update the total when loadcell data changes
+        updateMaxQuantityInfo(); // Update individual quantity info
+        
+        // Only redirect to cart if NOT in adding state and products are taken
+        fetch('/api/rfid-state')
+            .then(response => response.json())
+            .then(stateData => {
+                const isAdding = stateData.success && stateData.is_adding;
+                
+                if (!isAdding && data.taken_quantity && Array.isArray(data.taken_quantity)) {
+                    const currentTakenQuantities = data.taken_quantity;
+                    
+                    // Check if any product has been taken (taken quantity > 0)
+                    const hasProductTaken = currentTakenQuantities.some(qty => qty > 0);
+                    console.log('Has product taken:', hasProductTaken, 'Current quantities:', currentTakenQuantities);
+                    
+                    if (hasProductTaken) {
+                        console.log('Product taken detected on shelf page, redirecting to cart page...');
+                        window.location.href = '/cart';
+                    }
+                }
+            })
+            .catch(error => {
+                console.warn('Could not check adding state:', error);
+            });
+    });
     
     // Listen for combo detection and redirect
     socket.on('redirect_to_combo', function(data) {
@@ -138,6 +142,9 @@ function initializeWebSocket() {
         
         // Lock navigation during employee adding process
         lockNavigation();
+        
+        // Show notification
+        showRFIDIndicator(data.message || 'Nhân viên đang thêm hàng...', 'info');
     });
 
     socket.on('max_quantity_added_notification', function(data) {
@@ -145,6 +152,13 @@ function initializeWebSocket() {
         
         // Unlock navigation after successful addition
         unlockNavigation();
+    });
+
+    socket.on('reload_shelf_page', function(data) {
+        console.log('Reloading shelf page for cloud sync:', data.message);
+        
+        // Reload the page to fetch fresh data from cloud
+        window.location.reload();
     });
 }
 
@@ -326,12 +340,10 @@ function lockNavigation() {
     console.log('Locking navigation - Employee adding max_quantity in progress');
     document.body.classList.add('rfid-adding-mode');
     
-    // Show persistent visual indicator that navigation is locked
-    showRFIDIndicator('Đang thêm hàng...', 'persistent');
-    
-    // Show the complete adding button
-    if (completeAddingContainer) {
-        completeAddingContainer.style.display = 'block';
+    // Show adding status indicator at top left
+    const addingStatusIndicator = document.getElementById('addingStatusIndicator');
+    if (addingStatusIndicator) {
+        addingStatusIndicator.style.display = 'flex';
     }
 }
 
@@ -342,14 +354,10 @@ function unlockNavigation() {
     console.log('Unlocking navigation - Max quantity addition complete');
     document.body.classList.remove('rfid-adding-mode');
     
-    // Hide the persistent "Đang thêm hàng..." indicator
-    if (rfidIndicator) {
-        rfidIndicator.classList.remove('show');
-    }
-
-    // Hide the complete adding button
-    if (completeAddingContainer) {
-        completeAddingContainer.style.display = 'none';
+    // Hide the adding status indicator
+    const addingStatusIndicator = document.getElementById('addingStatusIndicator');
+    if (addingStatusIndicator) {
+        addingStatusIndicator.style.display = 'none';
     }
 
     showRFIDIndicator('Thêm sản phẩm thành công: Đã cập nhật số lượng sản phẩm');
@@ -358,39 +366,4 @@ function unlockNavigation() {
     setTimeout(() => {
         window.location.reload();
     }, 2000); // Wait 2 seconds to show success message before reload
-}
-
-/**
- * Handle complete adding button click
- */
-function handleCompleteAdding() {
-    console.log('Button clicked - handleCompleteAdding called');
-    
-    // Send API request to print to server terminal
-    fetch('/api/added-product', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            message: 'hoàn tất thêm hàng'
-        })
-    })
-    .then(response => {
-        console.log('API response status:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('API response data:', data);
-        if (data.success) {
-            console.log('Message printed to terminal successfully');
-        } else {
-            console.error('Failed to print to terminal:', data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error printing to terminal:', error);
-    });
-    
-    unlockNavigation();
 }

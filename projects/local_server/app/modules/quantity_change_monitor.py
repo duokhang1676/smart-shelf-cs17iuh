@@ -67,7 +67,8 @@ class QuantityChangeMonitor:
             self.last_taken_quantity = globals.get_taken_quantity()
             print(f"Entered slideshow page, tracking quantity changes from: {self.last_taken_quantity}")
         else:
-            print("Left slideshow page, stopping quantity tracking")
+            # print("Left slideshow page, stopping quantity tracking")
+            pass
     
     def _monitor_loop(self):
         """Main monitoring loop"""

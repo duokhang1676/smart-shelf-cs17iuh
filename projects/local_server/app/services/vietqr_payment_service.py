@@ -18,6 +18,7 @@ from datetime import datetime
 
 import requests
 from dotenv import load_dotenv
+from app.modules import globals
 
 load_dotenv()
 
@@ -29,10 +30,11 @@ class VietQRPaymentAPI:
     @staticmethod
     def generate_qr(amount, order_id=None):
         add_info = f"Pay for snack machine {order_id}" if order_id else "Pay for snack machine"
+        sepay_config = globals.sepay_info
         payload = {
-            "accountNo": os.getenv("VIETQR_ACCOUNT_NO"),
-            "accountName": os.getenv("VIETQR_ACCOUNT_NAME"),
-            "acqId": os.getenv("VIETQR_ACQ_ID"),
+            "accountNo": sepay_config.get("VIETQR_ACCOUNT_NO", ""),
+            "accountName": sepay_config.get("VIETQR_ACCOUNT_NAME", ""),
+            "acqId": sepay_config.get("VIETQR_ACQ_ID", ""),
             "addInfo": add_info,
             "amount": amount,
             "template": "compact"
@@ -43,13 +45,19 @@ class VietQRPaymentAPI:
         return response.json()
 
     @staticmethod
-    def check_sepay_payment(token, bank_account_id, amount, add_info=None, order_id=None, days=1):
+    def check_sepay_payment(token=None, bank_account_id=None, amount=None, add_info=None, order_id=None, days=1):
+        # Load from globals if not provided
+        sepay_config = globals.sepay_info
+        if token is None:
+            token = sepay_config.get("SEPAY_AUTH_TOKEN", "")
+        if bank_account_id is None:
+            bank_account_id = sepay_config.get("SEPAY_BANK_ACCOUNT_ID", "")
+        
         SEPAY_TRANSACTION_URL = os.getenv("SEPAY_TRANSACTION_URL")
         today = datetime.now().strftime("%Y-%m-%d")
         
         params = {
-            "transaction_date_min": today,
-            "limit": 20
+            "limit": 100  # Get more transactions, no date filter for immediate detection
         }
         
         # Don't add account_number filter to get all transactions
@@ -61,7 +69,7 @@ class VietQRPaymentAPI:
         }
         
         try:
-            response = requests.get(SEPAY_TRANSACTION_URL, headers=headers, params=params, timeout=10)
+            response = requests.get(SEPAY_TRANSACTION_URL, headers=headers, params=params, timeout=3)
             if response.status_code == 401:
                 return "unauthorized", None
             response.raise_for_status()
@@ -69,14 +77,43 @@ class VietQRPaymentAPI:
             
             if data.get("messages", {}).get("success") is True:
                 transactions = data.get("transactions", [])
-                for tx in transactions:
+                
+                # Debug: Log number of transactions received
+                print(f"[SEPAY] Received {len(transactions)} transactions from API")
+                
+                # Sort by transaction_date DESC to check newest first
+                transactions_sorted = sorted(
+                    transactions, 
+                    key=lambda x: x.get("transaction_date", ""), 
+                    reverse=True
+                )
+                
+                for tx in transactions_sorted:
                     content = tx.get("transaction_content", "")
                     tx_date = tx.get("transaction_date", "")
                     tx_amount = float(tx.get("amount_in", 0))
                     
+                    # Debug: Log each transaction being checked
+                    if transactions_sorted.index(tx) < 3:  # Only log first 3 to avoid spam
+                        print(f"[SEPAY] Checking tx: date={tx_date}, amount={tx_amount}, content='{content[:50]}...'")
+                    
+                    # CRITICAL: Check BOTH order_id AND amount match
                     # Check if the transaction content contains order_id and is from today
                     if order_id and order_id in content and tx_date.startswith(today):
-                        return True, tx
+                        # Verify amount matches (must be exact or greater)
+                        if amount is not None and tx_amount >= amount:
+                            print(f"[SEPAY] ✓ Match found! Order: {order_id}, Amount: {tx_amount} >= {amount}, Content: {content}")
+                            return True, tx
+                        elif amount is not None:
+                            print(f"[SEPAY] ✗ Amount mismatch! Order: {order_id}, Received: {tx_amount}, Expected: {amount}")
+                            # Continue checking other transactions
+                        else:
+                            # If amount is None, accept any amount (legacy behavior)
+                            print(f"[SEPAY] ⚠ Match found without amount verification! Order: {order_id}, Content: {content}")
+                            return True, tx
+                
+                # If no match, log what we're looking for
+                print(f"[SEPAY] No match found. Looking for order_id='{order_id}' with amount={amount} in today's transactions")
                                 
             return False, None
             

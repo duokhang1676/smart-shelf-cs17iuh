@@ -22,6 +22,7 @@ from app.modules import globals
 from app.utils.sound_utils import play_sound
 import threading
 from collections import deque
+from threading import Lock
 # Load environment variables
 load_dotenv()
 
@@ -57,6 +58,7 @@ delay_threshold_shake = 10
 windows_length = 5
 windows = deque([0] * windows_length, maxlen=windows_length)
 pre_x, pre_y, pre_z = (0,0,0)
+imu_lock = Lock()  # Lock to protect global variables
 sound_file_path_lean = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/imu_alert.mp3"))
 sound_file_path_shake = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/imu_alert_2.mp3"))
 
@@ -111,83 +113,157 @@ def imu_processing(x,y,z):
 # Create handler to receive IMU notifications
 def create_notify_handler(uuid):
     def handler(sender, data):
-        if uuid == IMU_UUID and len(data) == 6:
-            x, y, z = struct.unpack("<hhh", data)
-            if globals.get_imu_data_init() is None:
-                global pre_x, pre_y, pre_z
-                globals.set_imu_data_init((x, y, z))
-                pre_x, pre_y, pre_z = x, y, z
-            else:
-                imu_processing(x, y, z)
+        try:
+            if uuid == IMU_UUID and len(data) == 6:
+                x, y, z = struct.unpack("<hhh", data)
+                with imu_lock:  # Thread-safe access
+                    global pre_x, pre_y, pre_z
+                    if globals.get_imu_data_init() is None:
+                        globals.set_imu_data_init((x, y, z))
+                        pre_x, pre_y, pre_z = x, y, z
+                    else:
+                        imu_processing(x, y, z)
+        except Exception as e:
+            print(f"⚠ Error in notification handler: {e}")
     return handler
 
 # Main BLE connection and reading loop
 async def connect_and_monitor():
+    max_connection_retries = 5
+    connection_retry_count = 0
+    
     while True:
         try:
             print("Searching for xg26 sensor device...")
-            device = await BleakScanner.find_device_by_address(XG26_SENSOR_ADDRESS, timeout=10.0)
+            device = await BleakScanner.find_device_by_address(XG26_SENSOR_ADDRESS, timeout=20.0)  # Increased timeout
             if not device:
                 print("xg26 sensor not found. Retrying...")
                 await asyncio.sleep(5)
                 continue
 
-            async with BleakClient(device, disconnected_callback=lambda c: print("Disconnected xg26 sensor device.")) as client:
-                print("Connected to xg26 sensor device.")
-                sound_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/connect-sensor.mp3"))
-                threading.Thread(target=play_sound, args=(sound_file_path,)).start()
-                globals.set_imu_data_init(None)  # Reset IMU initial data on new connection
-                # Enable notifications
-                for uuid, (_, _, _, is_notify) in CHAR_MAP.items():
-                    if is_notify:
-                        await client.start_notify(uuid, create_notify_handler(uuid))
-
-                while client.is_connected:
-                    #print("-" * 40)
-
-                    for uuid, (label, fmt, scale, is_notify) in CHAR_MAP.items():
-                        if is_notify:
-                            # if globals.imu_data:
-                            #     x, y, z = globals.imu_data
-                            #     print(f"{label}: X={x} Y={y} Z={z}")
-                            # else:
-                            #     print(f"{label}: No data yet.")
-                            pass
-                        else:
-                            try:
-                                data = await client.read_gatt_char(uuid)
-                                if len(data) == struct.calcsize(fmt):
-                                    value = struct.unpack(fmt, data)[0] / scale
-                                    #print(f"{label}: {round(value, 2)}")
-
-                                    # Assign to global variable
-                                    if uuid == CHAR_UUID_PRESSURE:
-                                        globals.set_pressure(value)
-                                    elif uuid == CHAR_UUID_TEMPERATURE:
-                                        globals.set_temperature(value)
-                                    elif uuid == CHAR_UUID_HUMIDITY:
-                                        globals.set_humidity(value)
-                                    elif uuid == CHAR_UUID_LIGHT:
-                                        globals.set_light(value)
-                                    elif uuid == CHAR_UUID_SOUND:
-                                        globals.set_sound(value)
-                                    elif uuid == CHAR_UUID_MAGNETIC:
-                                        globals.set_magnetic(value)
-                                else:
-                                    print(f"{label}: Invalid data length.")
-                            except Exception as e:
-                                print(f"{label}: Read error - {e}")
+            print(f"Found xg26 sensor, attempting to connect (attempt {connection_retry_count + 1}/{max_connection_retries})...")
+            
+            # Connect with explicit timeout (BleakClient handles timeout internally)
+            async with BleakClient(
+                device, 
+                disconnected_callback=lambda c: print("Disconnected xg26 sensor device."),
+                timeout=30.0  # 30 second timeout for connection
+            ) as client:
+                print("✓ Connected to xg26 sensor device.")
+                connection_retry_count = 0  # Reset retry count on successful connection
                     
-                    # Print values for debug
-                    # print(f"\n[DEBUG] Pressure: {globals.pressure}, Temp: {globals.temperature}, Humidity: {globals.humidity}")
-                    # print(f"[DEBUG] Light: {globals.light}, Sound: {globals.sound}, Magnetic: {globals.magnetic}")
-                    # print(f"[DEBUG] IMU: {globals.imu_data}")
-                    await asyncio.sleep(5) # Delay between reads
+                sound_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/sounds/connect-sensor.mp3"))
+                threading.Thread(target=play_sound, args=(sound_file_path,), daemon=True).start()
+                globals.set_imu_data_init(None)  # Reset IMU initial data on new connection
+                
+                # Enable notifications with retry
+                for uuid, (label, _, _, is_notify) in CHAR_MAP.items():
+                    if is_notify:
+                        try:
+                            await client.start_notify(uuid, create_notify_handler(uuid))
+                            print(f"✓ Notifications enabled for {label}")
+                        except Exception as notify_error:
+                            print(f"⚠ Failed to enable notifications for {label}: {notify_error}")
 
+                # Main read loop with improved stability
+                read_cycle_count = 0
+                while client.is_connected:
+                    try:
+                        for uuid, (label, fmt, scale, is_notify) in CHAR_MAP.items():
+                            if not is_notify:  # Only read non-notify characteristics
+                                # Check connection state before each read
+                                if not client.is_connected:
+                                    print("⚠ Connection lost during read cycle")
+                                    break
+                                    
+                                try:
+                                    data = await asyncio.wait_for(client.read_gatt_char(uuid), timeout=10.0)
+                                    if len(data) == struct.calcsize(fmt):
+                                        value = struct.unpack(fmt, data)[0] / scale
+
+                                        # Assign to global variable
+                                        if uuid == CHAR_UUID_PRESSURE:
+                                            globals.set_pressure(value)
+                                        elif uuid == CHAR_UUID_TEMPERATURE:
+                                            globals.set_temperature(value)
+                                        elif uuid == CHAR_UUID_HUMIDITY:
+                                            globals.set_humidity(value)
+                                        elif uuid == CHAR_UUID_LIGHT:
+                                            globals.set_light(value)
+                                        elif uuid == CHAR_UUID_SOUND:
+                                            globals.set_sound(value)
+                                        elif uuid == CHAR_UUID_MAGNETIC:
+                                            globals.set_magnetic(value)
+                                    else:
+                                        print(f"{label}: Invalid data length.")
+                                except asyncio.TimeoutError:
+                                    print(f"{label}: Read timeout, skipping...")
+                                except Exception as e:
+                                    print(f"{label}: Read error - {e}")
+                                
+                                # Add delay between characteristic reads to avoid BLE stack overload
+                                await asyncio.sleep(0.2)
+                        
+                        # Keepalive: send a read request periodically to maintain connection
+                        read_cycle_count += 1
+                        if read_cycle_count % 6 == 0:  # Every 6th cycle (~1 minute)
+                            try:
+                                await client.read_gatt_char(CHAR_UUID_TEMPERATURE)  # Lightweight keepalive
+                            except:
+                                pass
+                        
+                        await asyncio.sleep(10)  # Increased delay between read cycles (was 5s)
+                        
+                    except Exception as read_loop_error:
+                        print(f"Error in read loop: {read_loop_error}")
+                        await asyncio.sleep(3)
+                        if not client.is_connected:
+                            break
+
+        except asyncio.TimeoutError:
+            connection_retry_count += 1
+            print(f"⚠ Connection timeout (attempt {connection_retry_count}/{max_connection_retries})")
+            
+            if connection_retry_count >= max_connection_retries:
+                print(f"⚠ Max connection retries reached. Waiting 30 seconds before retry cycle...")
+                connection_retry_count = 0
+                await asyncio.sleep(30)
+            else:
+                print("Retrying connection in 10 seconds...")
+                await asyncio.sleep(10)
+                
+        except asyncio.CancelledError:
+            print("XG26 sensor connection cancelled")
+            connection_retry_count += 1
+            if connection_retry_count >= max_connection_retries:
+                connection_retry_count = 0
+                await asyncio.sleep(30)
+            else:
+                await asyncio.sleep(10)
+                
         except (BleakError, OSError) as e:
-            print(f"Xg26 sensor connection error: {e}")
-            print("Reconnecting xg26 sensor in 10 seconds...")
-            await asyncio.sleep(10)
+            connection_retry_count += 1
+            print(f"⚠ Xg26 sensor connection error (attempt {connection_retry_count}/{max_connection_retries}): {e}")
+            
+            if connection_retry_count >= max_connection_retries:
+                print(f"⚠ Max connection retries reached. Waiting 30 seconds before retry cycle...")
+                connection_retry_count = 0
+                await asyncio.sleep(30)
+            else:
+                print("Reconnecting xg26 sensor in 10 seconds...")
+                await asyncio.sleep(10)
+                
+        except Exception as e:
+            print(f"⚠ Unexpected error in XG26 sensor: {e}")
+            import traceback
+            traceback.print_exc()
+            await asyncio.sleep(15)
+
 def start_xg26_sensor():
-    # Start the async event loop
-    asyncio.run(connect_and_monitor())
+    # Create a new event loop for this thread to avoid "Future attached to a different loop" error
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(connect_and_monitor())
+    finally:
+        loop.close()

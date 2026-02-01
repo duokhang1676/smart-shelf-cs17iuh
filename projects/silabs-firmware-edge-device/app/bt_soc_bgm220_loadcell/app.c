@@ -41,14 +41,14 @@ extern sl_i2cspm_t *sl_i2cspm_mikroe;
 // loadcell information
 int32_t offset[LOADCELL_NUM] = {0};
 int scale[LOADCELL_NUM] = {400};
-int scale_weight = 515; // use Aquafina 500ml to set scale
+int scale_weight = 525; // use Dasani 510ml to set scale
 
 // error threshold
 
-int error_threshold_weight_percent = 20; // weight can error 10%
+int error_threshold_weight_percent = 35; // weight can error 10%
 
 int loadcell_timeout_delay_threshold = 5;
-int error_weight_delay_threshold = 3;
+int error_weight_delay_threshold = 5;
 
 // delay counter
 int loadcell_timeout_delay[LOADCELL_NUM] = {0};
@@ -62,12 +62,15 @@ int product_price[LOADCELL_NUM] = {0};
 int8_t verified_quantity[LOADCELL_NUM] = {0};
 
 uint8_t last_quantity[LOADCELL_NUM] = {0}; // Save last loadcell value
+uint8_t previous_quantity[LOADCELL_NUM] = {0}; // Save previous read value for double-check
 
 bool adding_products = false; // Check adding product state
 
 int time_count = 0; // Count to reset offset every time
 
 bool changed = false; // Check quantity and last quantity change state
+bool error_weight_flag[LOADCELL_NUM] = {false}; // Track error state for each loadcell
+uint8_t last_error_code[LOADCELL_NUM] = {0}; // Track last error code for each loadcell
 
 
 /*************** FUNCTION ***************/
@@ -251,20 +254,41 @@ void lcd_print_centered(uint8_t row, const char *text) {
 
 void lcd_show(){
   uint8_t pca_addr = i2c_scan();
+  
+  // Reset PCA9548A trước khi sử dụng để đảm bảo trạng thái sạch
+  pca9548a_reset(pca_addr);
+  printf("PCA9548A reset completed at address 0x%02X\n", pca_addr);
+  printf("Starting LCD initialization and display...\n");
+  
+  // Khởi tạo và hiển thị dữ liệu cho từng LCD
   for (uint8_t i = 0; i < LOADCELL_NUM; i++) {
+      printf("[LCD %d] Selecting channel %d...\n", i, i);
+      
+      // Chọn kênh cho LCD thứ i
       lcd_select_channel(pca_addr, i);
-
+      
+      printf("[LCD %d] Initializing...\n", i);
       lcd_init();
       lcd_clear();
-
+      
+      printf("[LCD %d] Displaying: %s - %d\n", i, product_name[i], product_price[i]);
+      
+      // Hiển thị tên sản phẩm
       lcd_print_centered(0, product_name[i]);
 
+      // Hiển thị giá 
       char buffer[20];
       format_number_with_commas(product_price[i], buffer, sizeof(buffer));
       strcat(buffer, "d");
-
       lcd_print_centered(1, buffer);
+      
+      printf("[LCD %d] Done!\n", i);
+      sl_sleeptimer_delay_millisecond(200); // Delay giữa mỗi LCD
   }
+  
+  // Tắt tất cả kênh sau khi hoàn thành
+  pca9548a_reset(pca_addr);
+  printf("All LCDs initialized and updated successfully!\n");
 }
 // === Init function ===
 SL_WEAK void app_init(void)
@@ -288,6 +312,13 @@ SL_WEAK void app_init(void)
 
   // Check loadcell pin available
   check_loadcell_pin();
+
+
+// debug fix loadcell //////////////////////////////////////////////////////////////////////////////////////
+  last_quantity[1] = 255;  // load cell 2
+  last_quantity[5] = 255;
+  // debug fix loadcell //////////////////////////////////////////////////////////////////////////////////////
+
 
   GPIO_PinModeSet(BUTTON_PORT, BUTTON_PIN, gpioModeInputPullFilter, 1);
   // check button_0 pressed to config offset and scale
@@ -316,7 +347,8 @@ SL_WEAK void app_init(void)
 // === Main loop ===
 SL_WEAK void app_process_action(void)
 {
-  bool error_weight_flag = false;
+  bool error_weight_flag[LOADCELL_NUM] = {false};
+  bool changed_index[LOADCELL_NUM] = {false}; // Track which loadcell changed
   char buffer[512];
   time_count++;
 
@@ -337,7 +369,7 @@ SL_WEAK void app_process_action(void)
       if(loadcell_timeout_delay[i] >= loadcell_timeout_delay_threshold){
           last_quantity[i] = 255; // error flag
           changed = true;
-          trigger_gpio_high_nonblocking(500);
+          error_weight_flag[i] = true;
       }
       continue;
     }
@@ -367,12 +399,18 @@ SL_WEAK void app_process_action(void)
     }else{
         if (weight > (verified_quantity[i] * weight_of_one[i] + error_weight)){
             // Invalid ( weight > real weight)
+            uint8_t current_error_code = 200;
+            if (last_error_code[i] != current_error_code) {
+                // Error type changed, reset counter
+                error_weight_delay[i] = 0;
+                last_error_code[i] = current_error_code;
+            }
             error_weight_delay[i]++;
             quantity = last_quantity[i];
             if(error_weight_delay[i] >= error_weight_delay_threshold){
                 printf("Weight %d invalid! (> real weight): %d > %d\n", i+1, weight, verified_quantity[i]*weight_of_one[i]);
                 quantity = 200;
-                error_weight_flag = true;
+                error_weight_flag[i] = true;
             }
         }else{
               if (remainder <= error_weight || remainder >= (weight_of_one[i] - error_weight)){
@@ -381,6 +419,7 @@ SL_WEAK void app_process_action(void)
                     // Valid
                     printf("Weight %d valid!, Weight: %d ,Quantity: %d\n", i+1, weight, quantity);
                     error_weight_delay[i] = 0;
+                    last_error_code[i] = 0; // Reset error code
 
 
 //                  Fix offset feature
@@ -391,23 +430,43 @@ SL_WEAK void app_process_action(void)
 //                        offset[i] = offset[i] - offset_change;
 //                    }
 
-                }else{
-                    // Invalid (weight outlier)
-                    error_weight_delay[i]++;
-                    quantity = last_quantity[i];
-                    if(error_weight_delay[i] >= error_weight_delay_threshold){
-                        printf("Weight %d invalid! (outlier): %d > %d or %d < %d\n",i+1,remainder,error_weight,remainder,(weight_of_one[i] - error_weight));
-                        quantity = 222;
-                        error_weight_flag = true;
-                    }
                 }
+//              else{
+//                    // Invalid (weight outlier)
+//                    uint8_t current_error_code = 222;
+//                    if (last_error_code[i] != current_error_code) {
+//                        // Error type changed, reset counter
+//                        error_weight_delay[i] = 0;
+//                        last_error_code[i] = current_error_code;
+//                    }
+//                    error_weight_delay[i]++;
+//                    quantity = last_quantity[i];
+//                    if(error_weight_delay[i] >= error_weight_delay_threshold){
+//                        printf("Weight %d invalid! (outlier): %d > %d or %d < %d\n",i+1,remainder,error_weight,remainder,(weight_of_one[i] - error_weight));
+//                        quantity = 222;
+//                        error_weight_flag[i] = true;
+//                    }
+//                }
           }
     }
 
     int taken = verified_quantity[i] - quantity;
+    
+    // Chỉ cập nhật khi giá trị ổn định qua 2 lần đọc liên tiếp
     if (quantity != last_quantity[i]) {
-      last_quantity[i] = quantity;
-      changed = true;
+      // Nếu giá trị mới giống với giá trị vòng lặp trước -> xác nhận thay đổi
+      if (quantity == previous_quantity[i]) {
+        last_quantity[i] = quantity;
+        changed = true;
+        changed_index[i] = true; // Mark this loadcell as changed
+        printf("Loadcell %d confirmed change: %d (verified after 2 reads)\n", i+1, quantity);
+      } else {
+        // Giá trị khác, lưu lại để so sánh vòng sau
+        previous_quantity[i] = quantity;
+      }
+    } else {
+      // Giá trị không đổi, reset previous
+      previous_quantity[i] = quantity;
     }
 
 //    Debug
@@ -433,11 +492,19 @@ SL_WEAK void app_process_action(void)
   if (changed){
       changed = false;
       if (is_trigger_done()) {
-          if (error_weight_flag){
+          // Check if any loadcell with error has changed its quantity
+          bool error_changed = false;
+          for (int i = 0; i < LOADCELL_NUM; i++) {
+              if (error_weight_flag[i] && changed_index[i]) {
+                  error_changed = true;
+                  break;
+              }
+          }
+          
+          if (error_changed){
               trigger_gpio_high_nonblocking(500);
           }else{
               trigger_gpio_high_nonblocking(100);
-              error_weight_flag = false;
           }
       }
 
@@ -450,5 +517,5 @@ SL_WEAK void app_process_action(void)
         printf(" ]\n");
       }
   }
-  sl_sleeptimer_delay_millisecond(1000);
+  sl_sleeptimer_delay_millisecond(700);
 }

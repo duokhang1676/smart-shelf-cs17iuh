@@ -75,6 +75,12 @@
 </nav>
 
 <div class="content-wrapper">
+    <!-- Adding Status Indicator - Top Left -->
+    <div class="adding-status-indicator" id="addingStatusIndicator" style="display: none;">
+        <div class="adding-status-icon">📦</div>
+        <div class="adding-status-text">Đang thêm hàng...</div>
+    </div>
+    
     <div class="container">
         <h1>KỆ HÀNG</h1>
         
@@ -212,13 +218,6 @@
     
     <div class="rfid-input-display" id="rfidInputDisplay">
         RFID: <span id="rfidInputText"></span>
-    </div>
-
-    <!-- Complete Adding Button - Only shown during adding state -->
-    <div class="complete-adding-button-container" id="completeAddingContainer" style="display: none;">
-        <button class="complete-adding-button" id="completeAddingButton">
-            <span>Xong</span>
-        </button>
     </div>
 
     <!-- Socket.IO and JavaScript - Load deferred for better performance -->

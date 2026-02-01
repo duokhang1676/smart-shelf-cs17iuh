@@ -34,6 +34,8 @@ from app.routes.api_routes import api_bp
 from app.routes.payment_routes import payment_bp
 from app.routes.loadcell_routes import loadcell_bp
 from app.routes.debug_routes import debug_bp
+from app.routes.wifi_routes import wifi_bp
+from app.routes.webhook_routes import webhook_bp
 from app.routes.websocket_routes import register_websocket_handlers
 
 # Import utilities and modules
@@ -41,6 +43,7 @@ from app.modules import globals
 from app.modules import voice_command_monitor
 from app.modules import quantity_change_monitor
 from app.modules import rfid_state_monitor
+from app.modules import payment_webhook_listener
 from app.utils.database_utils import load_products_from_json
 from app.utils.loadcell_utils import (
     check_loadcell_error_codes, 
@@ -83,6 +86,10 @@ quantity_change_monitor.start_quantity_change_monitor()
 rfid_state_monitor.set_socketio(socketio)
 rfid_state_monitor.start_rfid_state_monitor()
 
+# Setup payment webhook listener with socketio instance and auto-start
+payment_webhook_listener.set_socketio(socketio, app)
+payment_webhook_listener.start_payment_webhook_listener()
+
 # Setup cleanup handlers
 def cleanup_voice_command_monitor():
     """Cleanup voice command monitor on app shutdown"""
@@ -119,6 +126,8 @@ app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(payment_bp)
 app.register_blueprint(loadcell_bp, url_prefix='/api')
 app.register_blueprint(debug_bp, url_prefix='/api')
+app.register_blueprint(wifi_bp)
+app.register_blueprint(webhook_bp, url_prefix='/webhook')
 
 def get_cart():
     """Helper function to get cart from app context"""
@@ -289,6 +298,19 @@ def main():
     # Run with SocketIO - accessible from LAN
     socketio.run(app, debug=False, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
 
+
+def get_local_ip():
+    """Lấy địa chỉ IP local của thiết bị"""
+    import socket
+    try:
+        # Tạo socket để lấy IP (không thực sự kết nối)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
 
 def start_webserver():
     # Pass socketio instance to BLE module for connection notifications FIRST

@@ -19,7 +19,7 @@ from app.modules import globals
 import keyboard
 import numpy as np
 import threading
-from app.modules.cloud_sync import load_products_from_cloud, load_rfids_from_cloud, post_history_added_products_to_cloud, load_posters_from_cloud, load_combo_from_cloud
+from app.modules.cloud_sync import load_products_from_cloud, load_rfids_from_cloud, post_history_added_products_to_cloud, load_posters_from_cloud, load_combo_from_cloud, load_sepay_info_from_cloud
 from app.utils.file_utils import write_file
 from app.utils.sound_utils import play_sound
 from dotenv import load_dotenv
@@ -55,6 +55,7 @@ def start_listen_rfid():
                     rfid_state = 1 - rfid_state
                     globals.set_rfid_state(rfid_state) # swap state between 0 and 1
                     if rfid_state == 1: # adding
+                        globals.set_is_tracking(False)  # stop tracking when adding products
                         threading.Thread(target=play_sound, args=(sound_file_path_1,)).start()
                         print("Load data from cloud")
                         try:
@@ -62,6 +63,7 @@ def start_listen_rfid():
                             load_rfids_from_cloud()
                             load_combo_from_cloud()
                             load_posters_from_cloud()
+                            load_sepay_info_from_cloud()
                         except Exception as e:
                             print(f"Error loading data from cloud: {e}")
                     else : # added

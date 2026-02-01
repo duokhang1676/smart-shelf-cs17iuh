@@ -133,16 +133,16 @@ def update_cart_with_combo_pricing(cart):
         # Apply combo pricing logic
         updated_cart, applied_combos = detect_and_apply_combo_pricing(cart)
         
-        # Log combo application for debugging
-        if applied_combos:
-            print(f"Applied {len(applied_combos)} combo(s) to cart:")
-            for combo in applied_combos:
-                combo_type = combo.get('combo_type', 'regular')
-                if combo_type == 'buy_x_get_y':
-                    print(f"  - {combo['combo_name']}: Buy {combo['buy_quantity']} get {combo['get_quantity']} free")
-                    print(f"    Savings: {combo['savings']:,.0f}đ")
-                else:
-                    print(f"  - {combo['combo_name']}: {combo['savings']:,.0f}đ saved")
+        # # Log combo application for debugging
+        # if applied_combos:
+        #     print(f"Applied {len(applied_combos)} combo(s) to cart:")
+        #     for combo in applied_combos:
+        #         combo_type = combo.get('combo_type', 'regular')
+        #         if combo_type == 'buy_x_get_y':
+        #             print(f"  - {combo['combo_name']}: Buy {combo['buy_quantity']} get {combo['get_quantity']} free")
+        #             print(f"    Savings: {combo['savings']:,.0f}đ")
+        #         else:
+        #             print(f"  - {combo['combo_name']}: {combo['savings']:,.0f}đ saved")
         
         return updated_cart, applied_combos
         

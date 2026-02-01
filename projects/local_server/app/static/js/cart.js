@@ -381,8 +381,14 @@ function initWebSocket() {
         showNotification('success', 'Thành công', 
             data.message || 'Đã cập nhật số lượng sản phẩm.', {
             closeable: true,
-            duration: 3000
+            duration: 2000
         });
+        
+        // Reload cart page to show updated product quantities
+        console.log('Reloading cart page to show updated quantities...');
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000); // Wait 2 seconds to show success message before reload
     });
 
     // Error handling
@@ -622,6 +628,37 @@ function renderCart() {
         const attributes = document.createElement('div');
         attributes.className = 'product-attributes';
         
+        // Add price display (with discount support like shelf page)
+        const priceDiv = document.createElement('div');
+        priceDiv.className = 'product-price';
+        
+        // Debug logging
+        console.log(`Product: ${p.product_name}, discount: ${p.discount}, original_price: ${p.original_price}, price: ${p.price}`);
+        
+        // Check if product has discount (percentage-based) or combo pricing
+        const hasDiscount = p.discount && p.discount > 0;
+        const hasComboDiscount = p.in_combo && p.original_price && p.original_price > p.price;
+        const hasPriceReduction = p.original_price && p.original_price > p.price;
+        
+        if (hasComboDiscount) {
+            // Combo pricing: show original price (crossed) and discounted price
+            priceDiv.innerHTML = `
+                <span class="original-price">${formatMoney(p.original_price)}₫</span>
+                <span class="discounted-price">${formatMoney(p.price)}₫</span>
+            `;
+        } else if (hasDiscount || hasPriceReduction) {
+            // Regular discount: show original price (crossed) and discounted price
+            priceDiv.innerHTML = `
+                <span class="original-price">${formatMoney(p.original_price)}₫</span>
+                <span class="discounted-price">${formatMoney(p.price)}₫</span>
+            `;
+        } else {
+            // No discount: show regular price
+            priceDiv.textContent = `${formatMoney(p.price)}₫`;
+        }
+        
+        attributes.appendChild(priceDiv);
+        
         const quantity = document.createElement('div');
         quantity.className = 'product-quantity';
         if (p.promotion_type === 'buy_x_get_y' && p.free_qty > 0) {
@@ -630,11 +667,22 @@ function renderCart() {
             quantity.innerHTML = `${p.qty}`;
         }
         
-        // Combo badge
+        // Combo badge with name
         if (p.in_combo) {
             const badge = document.createElement('div');
             badge.className = 'combo-badge';
-            badge.textContent = 'COMBO';
+            const comboName = p.in_combo.combo_name || 'COMBO';
+            const comboType = p.in_combo.combo_type || 'regular';
+            
+            if (comboType === 'buy_x_get_y') {
+                const buyQty = p.in_combo.buy_quantity || 0;
+                const getQty = p.in_combo.get_quantity || 0;
+                badge.textContent = `MUA ${buyQty} TẶNG ${getQty}`;
+                badge.title = comboName;
+            } else {
+                badge.textContent = 'COMBO';
+                badge.title = comboName;
+            }
             details.appendChild(badge);
         }
         
@@ -672,23 +720,36 @@ function updateOrderSummary(cartItems) {
     const discountSpan = document.querySelector('#discount-row .amount');
     const totalAmountSpan = document.querySelector('#total-row .total-amount');
     
-    let subtotal = 0; // Tổng giá gốc
-    let totalDiscount = 0; // Tổng giảm giá
+    let subtotal = 0; // Tổng giá gốc (trước mọi giảm giá)
+    let totalDiscount = 0; // Tổng giảm giá (cả discount riêng lẻ + combo)
     
     cartItems.forEach(item => {
-        // Tạm tính dựa trên giá gốc
+        // Tạm tính dựa trên giá gốc (trước khi giảm giá)
         const originalPrice = item.original_price || item.price;
         const itemSubtotal = originalPrice * item.qty;
         subtotal += itemSubtotal;
         
-        // Tính giảm giá từ combo
-        if (item.original_price && item.original_price > item.price) {
-            totalDiscount += (item.original_price - item.price) * item.qty;
+        // Tính tổng giảm giá = giảm giá riêng lẻ + giảm giá combo
+        // Case 1: Sản phẩm có discount riêng lẻ NHƯNG KHÔNG có combo
+        if (!item.in_combo && item.discount && item.discount > 0) {
+            // Giảm giá riêng lẻ = original_price - price (discounted price)
+            const individualDiscount = (item.original_price - item.price) * item.qty;
+            totalDiscount += individualDiscount;
+        }
+        // Case 2: Sản phẩm trong combo (có thể có hoặc không có discount riêng lẻ trước đó)
+        else if (item.in_combo) {
+            // Tổng giảm giá = original_price - final combo price
+            // (bao gồm cả discount riêng lẻ + combo discount)
+            const totalItemDiscount = (item.original_price - item.price) * item.qty;
+            totalDiscount += totalItemDiscount;
         }
         
-        // Tính giảm giá từ promotion buy_x_get_y
+        // Tính giảm giá từ promotion buy_x_get_y (sản phẩm miễn phí)
         if (item.promotion_type === 'buy_x_get_y' && item.free_qty > 0) {
-            const freeValue = (item.original_price || item.price) * item.free_qty;
+            // Sản phẩm miễn phí = giá trị của số lượng free
+            // Dùng discounted_price nếu có (giá sau discount riêng lẻ), nếu không dùng original_price
+            const priceForFreeItems = item.discounted_price || item.original_price || item.price;
+            const freeValue = priceForFreeItems * item.free_qty;
             totalDiscount += freeValue;
         }
     });
@@ -711,23 +772,62 @@ function updateComboSavingsDisplay(products) {
     if (!comboSavingsDiv) return;
     
     let totalSavings = 0;
-    let hasCombo = false;
+    const comboDetails = {}; // Group by combo_id
     
     products.forEach(product => {
-        if (product.in_combo && product.original_price) {
-            const savings = (product.original_price - product.price) * product.qty;
-            totalSavings += savings;
-            hasCombo = true;
+        if (product.in_combo) {
+            const comboId = product.in_combo.combo_id || 'unknown';
+            const comboName = product.in_combo.combo_name || 'Combo';
+            const comboType = product.in_combo.combo_type || 'regular';
+            
+            if (!comboDetails[comboId]) {
+                comboDetails[comboId] = {
+                    name: comboName,
+                    type: comboType,
+                    savings: 0,
+                    products: []
+                };
+            }
+            
+            // Calculate savings
+            let itemSavings = 0;
+            if (comboType === 'buy_x_get_y' && product.free_qty > 0) {
+                itemSavings = (product.original_price || product.price) * product.free_qty;
+            } else if (product.original_price && product.original_price > product.price) {
+                itemSavings = (product.original_price - product.price) * product.qty;
+            }
+            
+            comboDetails[comboId].savings += itemSavings;
+            comboDetails[comboId].products.push(product.product_name || 'Sản phẩm');
+            totalSavings += itemSavings;
         }
     });
     
-    if (hasCombo && totalSavings > 0) {
-        comboSavingsDiv.innerHTML = `
-            <div class="combo-savings-content">
-                <span class="combo-icon">🎉</span>
-                <span class="combo-text">Tiết kiệm combo: ${formatMoney(totalSavings)} ₫</span>
-            </div>
-        `;
+    if (totalSavings > 0) {
+        let html = '<div class="combo-savings-content" style="padding: 8px;">';
+        html += '<div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">';
+        html += '<span style="font-size: 1.2em;">🎉</span> ';
+        html += `Tiết kiệm từ Combo: ${formatMoney(totalSavings)} ₫`;
+        html += '</div>';
+        
+        // Show combo details
+        for (const comboId in comboDetails) {
+            const combo = comboDetails[comboId];
+            html += '<div style="font-size: 0.9em; color: #555; margin-left: 20px;">';
+            
+            if (combo.type === 'buy_x_get_y') {
+                html += `<span style="font-weight: 500;">${combo.name}</span>: `;
+                html += `Tiết kiệm ${formatMoney(combo.savings)} ₫ (Tặng sản phẩm miễn phí)`;
+            } else {
+                html += `<span style="font-weight: 500;">${combo.name}</span>: `;
+                html += `Tiết kiệm ${formatMoney(combo.savings)} ₫`;
+            }
+            
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        comboSavingsDiv.innerHTML = html;
         comboSavingsDiv.style.display = 'block';
     } else {
         comboSavingsDiv.style.display = 'none';
@@ -822,10 +922,10 @@ function renderCartByLoadcell(loadcellArr, errorCodes = []) {
         if (cart.length > 0) {
             console.log('Applying combo logic to cart:', cart);
             
-            // First render products immediately (fallback)
+            // Render immediately with current cart (no delay/loading)
             renderCartWithComboDisplay(cart);
             
-            // Then try to apply combo logic
+            // Then check for combos in background
             fetch('/api/cart/apply-combos', {
                 method: 'POST',
                 headers: {
@@ -836,16 +936,20 @@ function renderCartByLoadcell(loadcellArr, errorCodes = []) {
             .then(response => response.json())
             .then(data => {
                 console.log('Combo response:', data);
-                if (data.cart_items) {
-                    // Re-render with combo data
+                // Only re-render if combo data is different (has combos applied)
+                if (data.cart_items && data.applied_combos && data.applied_combos.length > 0) {
+                    // Has combos - update display
                     renderCartWithComboDisplay(data.cart_items);
                 }
+                // If no combos, keep the current render (no flicker)
             })
             .catch(error => {
                 console.error('Error applying combo:', error);
-                // Fallback to original display with simple render
-                renderCartWithComboDisplay(cart);
+                // Already rendered, no need to do anything
             });
+        } else {
+            // Empty cart - clear display
+            renderCartWithComboDisplay([]);
         }
         
         // Update order summary and navigation badge with cart item count
@@ -895,6 +999,11 @@ function renderCartWithComboDisplay(cartItems) {
     if (orderSummary) orderSummary.style.display = 'block';
     
     cartItems.forEach((p, idx) => {
+        // Only display products with quantity > 0
+        if (!p.qty || p.qty <= 0) {
+            return;
+        }
+        
         const card = document.createElement('div');
         card.className = 'product-card';
         
@@ -922,19 +1031,49 @@ function renderCartWithComboDisplay(cartItems) {
         quantity.className = 'product-quantity';
         quantity.innerHTML = `Số lượng: ${p.qty}`;
         
-        // Add price display (always show original price)
+        // Add price display with discount support
         const priceDiv = document.createElement('div');
         priceDiv.className = 'product-price';
         const originalPrice = p.original_price || p.price;
-        console.log('Product:', p.product_name, 'Original Price:', originalPrice, 'Current Price:', p.price);
-        priceDiv.innerHTML = `${formatMoney(originalPrice)} ₫`;
+        const currentPrice = p.price;
+        const hasDiscount = p.discount && p.discount > 0;
         
-        // Add combo badge
+        console.log('Product:', p.product_name, '- Discount:', p.discount, '- Original:', originalPrice, '- Current:', currentPrice);
+        
+        // Show crossed-out original price and discounted price if has discount or combo
+        if ((p.in_combo || hasDiscount) && originalPrice > currentPrice) {
+            priceDiv.innerHTML = `
+                <span style="text-decoration: line-through; color: #999; font-size: 0.9em;">${formatMoney(originalPrice)} ₫</span>
+                <span style="color: #e74c3c; font-weight: bold; margin-left: 8px;">${formatMoney(currentPrice)} ₫</span>
+            `;
+        } else {
+            priceDiv.innerHTML = `${formatMoney(currentPrice)} ₫`;
+        }
+        
+        // Add combo badge or discount badge
         if (p.in_combo) {
             const comboBadge = document.createElement('div');
             comboBadge.className = 'combo-badge';
-            comboBadge.textContent = 'COMBO';
+            const comboName = p.in_combo.combo_name || 'COMBO';
+            const comboType = p.in_combo.combo_type || 'regular';
+            
+            if (comboType === 'buy_x_get_y') {
+                const buyQty = p.in_combo.buy_quantity || 0;
+                const getQty = p.in_combo.get_quantity || 0;
+                comboBadge.textContent = `MUA ${buyQty} TẶNG ${getQty}`;
+                comboBadge.title = comboName;
+                comboBadge.style.backgroundColor = '#ff5722';
+            } else {
+                comboBadge.textContent = 'COMBO';
+                comboBadge.title = comboName;
+            }
             details.appendChild(comboBadge);
+        } else if (hasDiscount) {
+            const discountBadge = document.createElement('div');
+            discountBadge.className = 'combo-badge';
+            discountBadge.style.backgroundColor = '#ff9800';
+            discountBadge.textContent = `-${p.discount}%`;
+            details.appendChild(discountBadge);
         }
         
     details.appendChild(name);
@@ -1144,6 +1283,8 @@ function processPaymentFlow(total) {
     const controller = new AbortController();
     let timeoutId;
     let products; // Declare products at function scope
+    let finalTotal; // Declare finalTotal at function scope to use across promise chain
+    let comboInfo; // Declare comboInfo at function scope
     
     // First process cart to get combo pricing
     fetch('/api/cart/process', {
@@ -1161,8 +1302,8 @@ function processPaymentFlow(total) {
         
         // Use processed cart with combo pricing
         const processedCart = cartProcessResult.cart;
-        const finalTotal = cartProcessResult.total;
-        const comboInfo = cartProcessResult.combo_info;
+        finalTotal = cartProcessResult.total; // Assign to function-scoped variable
+        comboInfo = cartProcessResult.combo_info; // Assign to function-scoped variable
         
         // Show combo savings to user
         if (comboInfo.combo_count > 0) {
@@ -1203,19 +1344,24 @@ function processPaymentFlow(total) {
         console.log('Tạo đơn hàng thành công! Đang chuyển đến trang thanh toán...');
         
         if (order && order.id) {
-            // Save order data to localStorage for QR page to retrieve
+            console.log('DEBUG: Order created, finalTotal =', finalTotal);
+            
+            // Save order data to localStorage for QR page to retrieve - use finalTotal from backend
             localStorage.setItem('order_' + order.id, JSON.stringify({ 
-                total: total, 
+                total: finalTotal,  // FIX: Use finalTotal from backend (with combo discount)
                 products: products,
                 timestamp: Date.now()
             }));
+            
+            console.log('DEBUG: Saved to localStorage, total =', finalTotal);
+            console.log('DEBUG: Redirecting to /qr?orderId=' + order.id + '&total=' + finalTotal);
             
             // Clear cart
             cart = [];
             renderCart();
             
-            // Redirect immediately without notification
-            window.location.href = `/qr?orderId=${order.id}&total=${total}`;
+            // Redirect with finalTotal (combo pricing applied)
+            window.location.href = `/qr?orderId=${order.id}&total=${finalTotal}`;
         } else {
             throw new Error('Order creation failed');
         }

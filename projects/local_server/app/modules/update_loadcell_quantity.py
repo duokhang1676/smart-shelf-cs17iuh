@@ -37,11 +37,37 @@ load_dotenv()
 # MQTT Client
 # Create MQTT client using WebSocket
 client = mqtt.Client(client_id=os.getenv("SHELF_ID"),transport="websockets")
+
+# MQTT Callbacks
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("✅ MQTT Connected successfully!")
+    else:
+        print(f"❌ MQTT Connection failed with code {rc}")
+
+def on_disconnect(client, userdata, rc):
+    if rc != 0:
+        print(f"⚠️ MQTT Unexpected disconnect: {rc}. Reconnecting...")
+        try:
+            client.reconnect()
+        except Exception as e:
+            print(f"❌ MQTT Reconnect failed: {e}")
+
+def on_publish(client, userdata, mid):
+    pass  # Silently confirm publish
+
+# Assign callbacks
+client.on_connect = on_connect
+client.on_disconnect = on_disconnect
+client.on_publish = on_publish
+
 # Connect to HiveMQ WebSocket broker (cloud)
 try:
     client.connect(os.getenv("BROKER_URL"), int(os.getenv("BROKER_PORT")), 60)
+    client.loop_start()  # Start background thread for network loop
+    print("🔄 MQTT background loop started")
 except Exception as e:
-    print("Error connecting to MQTT broker:", e)
+    print(f"❌ Error connecting to MQTT broker: {e}")
 # ADDRESS UUIDs
 BGM220_LOADCELL_1_ADDRESS = os.getenv("BGM220_LOADCELL_1_ADDRESS")
 BGM220_LOADCELL_2_ADDRESS = os.getenv("BGM220_LOADCELL_2_ADDRESS")
@@ -64,19 +90,95 @@ DEVICES = {
         "queue": None
     }
 }
+
+# Store previous sensor values for comparison
+previous_sensor_values = {
+    "humidity": None,
+    "temperature": None,
+    "light": None,
+    "pressure": None
+}
+last_heartbeat_time = 0
+HEARTBEAT_INTERVAL = 300  # 5 minutes in seconds
+
+def should_publish_sensor_data(current_data):
+    """Check if sensor data has changed significantly or if heartbeat is due"""
+    global previous_sensor_values, last_heartbeat_time
+    
+    current_time = time.time()
+    
+    # Heartbeat check - publish every HEARTBEAT_INTERVAL seconds
+    if current_time - last_heartbeat_time >= HEARTBEAT_INTERVAL:
+        last_heartbeat_time = current_time
+        previous_sensor_values.update(current_data)
+        return True, "heartbeat"
+    
+    # First time publishing
+    if previous_sensor_values["temperature"] is None:
+        previous_sensor_values.update(current_data)
+        last_heartbeat_time = current_time
+        return True, "initial"
+    
+    # Check each sensor value for significant changes
+    temp_change = abs(current_data["temperature"] - previous_sensor_values["temperature"])
+    humidity_change = abs(current_data["humidity"] - previous_sensor_values["humidity"])
+    
+    # Calculate percentage change for light and pressure
+    light_change_percent = 0
+    if previous_sensor_values["light"] != 0:
+        light_change_percent = abs(current_data["light"] - previous_sensor_values["light"]) / previous_sensor_values["light"] * 100
+    
+    pressure_change_percent = 0
+    if previous_sensor_values["pressure"] != 0:
+        pressure_change_percent = abs(current_data["pressure"] - previous_sensor_values["pressure"]) / previous_sensor_values["pressure"] * 100
+    
+    # Thresholds
+    TEMP_THRESHOLD = 0.5  # degrees
+    HUMIDITY_THRESHOLD = 0.5  # percent
+    LIGHT_THRESHOLD = 5  # percent
+    PRESSURE_THRESHOLD = 5  # percent
+    
+    if temp_change >= TEMP_THRESHOLD:
+        previous_sensor_values.update(current_data)
+        return True, f"temperature change: {temp_change:.2f}°C"
+    
+    if humidity_change >= HUMIDITY_THRESHOLD:
+        previous_sensor_values.update(current_data)
+        return True, f"humidity change: {humidity_change:.2f}%"
+    
+    if light_change_percent >= LIGHT_THRESHOLD:
+        previous_sensor_values.update(current_data)
+        return True, f"light change: {light_change_percent:.2f}%"
+    
+    if pressure_change_percent >= PRESSURE_THRESHOLD:
+        previous_sensor_values.update(current_data)
+        return True, f"pressure change: {pressure_change_percent:.2f}%"
+    
+    return False, None
+
 def send_mqtt_data():
     # Send mqtt data to broker
     while True:
-        time.sleep(5)
+        time.sleep(10)
         try:
-            sensor_data = {
-                "id": os.getenv("SHELF_ID"),
+            current_sensor_data = {
                 "humidity": globals.get_humidity(),
                 "temperature": globals.get_temperature(),
                 "light": globals.get_light(),
                 "pressure": globals.get_pressure()
             }
-            client.publish(os.getenv("MQTT_SENSOR_TOPIC"), json.dumps(sensor_data))
+            
+            # Check if we should publish
+            should_publish, reason = should_publish_sensor_data(current_sensor_data)
+            
+            if should_publish:
+                sensor_data = {
+                    "id": os.getenv("SHELF_ID"),
+                    **current_sensor_data
+                }
+                client.publish(os.getenv("MQTT_SENSOR_TOPIC"), json.dumps(sensor_data), retain=True)
+                print(f"Published sensor data - Reason: {reason}")
+            
             if globals.get_shelf_lean() or globals.get_shelf_shake():
                 shelf_status = {
                     "id": os.getenv("SHELF_ID"),
@@ -84,7 +186,7 @@ def send_mqtt_data():
                     "shelf_status_shake": globals.get_shelf_shake(),
                     "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                client.publish(os.getenv("MQTT_SHELF_STATUS_TOPIC"), json.dumps(shelf_status))
+                client.publish(os.getenv("MQTT_SHELF_STATUS_TOPIC"), json.dumps(shelf_status), retain=True)
                 print("Sent shelf status update")
                 globals.set_shelf_lean(False)
                 globals.set_shelf_shake(False)
@@ -94,12 +196,12 @@ def send_mqtt_data():
                     "taken_quantity": globals.get_taken_quantity(),
                     "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                client.publish(os.getenv("MQTT_UNPAID_CUSTOMER_TOPIC"), json.dumps(unpaid_customer))
+                client.publish(os.getenv("MQTT_UNPAID_CUSTOMER_TOPIC"), json.dumps(unpaid_customer), retain=True)
                 print("Sent unpaid customer warning")
                 globals.set_unpaid_customer_warning(False)
         except Exception as e:
-            print("Stop send mqtt data.")
-            client.disconnect()
+            print(f"⚠️ MQTT publish error in send_mqtt_data: {e}")
+            # Don't disconnect - let auto-reconnect handle it
 
 def notification_handler_factory(device_name):
     def handler(sender, data):
@@ -115,7 +217,7 @@ def notification_handler_factory(device_name):
             globals.set_loadcell_quantity(new_data)
 
         loadcell_error_indexes = [i + 1 for i, v in enumerate(globals.get_loadcell_quantity_snapshot()) if v == 200 or v == 222]
-        if loadcell_error_indexes:
+        if loadcell_error_indexes and globals.rfid_state != 1:  # Only warn when not in adding state
             loadcell_error_indexes_str = " và ngăn ".join(map(str, loadcell_error_indexes))
             text = "Cảnh báo sản phẩm đặt tại ngăn thứ " + loadcell_error_indexes_str + " không đúng. Vui lòng đặt sản phẩm lại đúng vị trí."
             speech_text(text)
@@ -126,16 +228,16 @@ def notification_handler_factory(device_name):
         # Update taken quantity in globals - convert to regular int list
         taken_quantity_list = [int(x) for x in taken_quantity]
         globals.set_taken_quantity(taken_quantity_list)
-        if np.any(taken_quantity > 0):
+        if np.any(taken_quantity > 0) and globals.get_rfid_state() != 1:
             globals.is_tracking = True
         else:
             globals.is_tracking = False
 
         print(f"[{device_name}] Received from {sender}: {list(data)}")
-        print("Verified Quantity:", globals.get_verified_quantity())
-        print("Current Loadcell Data:", new_data)
-        print("Taken Quantity:", taken_quantity_list)
-        print("Is Tracking:", globals.is_tracking)
+        # print("Verified Quantity:", globals.get_verified_quantity())
+        # print("Current Loadcell Data:", new_data)
+        # print("Taken Quantity:", taken_quantity_list)
+        # print("Is Tracking:", globals.is_tracking)
 
         # Emit WebSocket update immediately after calculating taken_quantity
         try:
@@ -150,12 +252,24 @@ def notification_handler_factory(device_name):
                 for i, qty in enumerate(taken_quantity_list):
                     if qty > 0 and i < len(products):
                         product = products[i]
+                        original_price = product.get('price', 0)
+                        discount = product.get('discount', 0)
+                        
+                        # Calculate discounted price if discount exists
+                        if discount > 0:
+                            discounted_price = original_price * (1 - discount / 100)
+                            discounted_price = round(discounted_price)
+                        else:
+                            discounted_price = original_price
+                        
                         cart.append({
                             'position': i,
                             'quantity': qty,
                             'product_id': product.get('product_id'),
                             'product_name': product.get('product_name'),
-                            'price': product.get('price'),
+                            'price': discounted_price,
+                            'original_price': original_price,  # Always store original
+                            'discount': discount,
                             'img_url': product.get('img_url'),
                             'weight': product.get('weight')
                         })
@@ -171,7 +285,7 @@ def notification_handler_factory(device_name):
                 
                 # Emit the update with combo-applied cart
                 emit_loadcell_update(socketio_instance, taken_quantity_list, cart_with_combo)
-                print(f"WebSocket emitted: taken_quantity={taken_quantity_list}, cart_items={len(cart_with_combo)}")
+                # print(f"WebSocket emitted: taken_quantity={taken_quantity_list}, cart_items={len(cart_with_combo)}")
                 
                 # Also update app cart config for API consistency
                 try:
@@ -197,7 +311,7 @@ def notification_handler_factory(device_name):
                                 'quantity': qty
                             })
                     emit_loadcell_update(socketio_instance, taken_quantity_list, cart)
-                    print(f"Fallback WebSocket emitted: taken_quantity={taken_quantity_list}, cart={cart}")
+                    # print(f"Fallback WebSocket emitted: taken_quantity={taken_quantity_list}, cart={cart}")
             except Exception as fallback_e:
                 print(f"Fallback WebSocket emit error: {fallback_e}")
 
@@ -208,11 +322,14 @@ def notification_handler_factory(device_name):
                 "values": new_data if isinstance(new_data, list) else [int(x) for x in new_data]
             }
             payload = json.dumps(mqtt_data)
-            client.publish(os.getenv("MQTT_LOADCELL_TOPIC"), payload)
-            print(f"Send: {payload}")
+            msg_info = client.publish(os.getenv("MQTT_LOADCELL_TOPIC"), payload, qos=1, retain=True)
+            if msg_info.rc == mqtt.MQTT_ERR_SUCCESS:
+                print(f"⚖️  Loadcell published (mid={msg_info.mid})")
+            else:
+                print(f"⚠️ Loadcell publish failed: rc={msg_info.rc}")
         except Exception as e:
-            print("Stop send mqtt data.")
-            client.disconnect()
+            print(f"⚠️ MQTT loadcell publish error: {e}")
+            # Don't disconnect - let auto-reconnect handle it
 
     return handler
 
@@ -349,8 +466,36 @@ def send_data_to_devices(loop):
                         print(f"[{name}] Queued: {globals.rfid_state} to {CHAR_UUID_WRITE_SAVE_QUANTITY}")
                     except Exception as e:
                         print(f"[{name}] Failed to queue: {e}")
+                
+                # Send MQTT notification when product added successfully
+                try:
+                    product_added_data = {
+                        "id": os.getenv("SHELF_ID"),
+                        "event": "product_added",
+                        "rfid": globals.rfid,
+                        "verified_quantity": globals.get_verified_quantity(),
+                        "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    client.publish(os.getenv("MQTT_PRODUCT_ADDED_TOPIC"), 
+                                   json.dumps(product_added_data), retain=True)
+                    print(f"📦 Sent product added notification - RFID: {globals.rfid}")
+                except Exception as e:
+                    print(f"Failed to send product added MQTT: {e}")
             else: # Adding
                 globals.set_is_tracking(False)
+                
+                # Emit WebSocket event to reload shelf page for fresh cloud data
+                try:
+                    from app.utils.loadcell_ws_utils import get_socketio_instance
+                    socketio_instance = get_socketio_instance()
+                    if socketio_instance:
+                        socketio_instance.emit('reload_shelf_page', {
+                            'message': 'Reloading shelf to sync cloud data'
+                        })
+                        print("[RFID] Emitted reload_shelf_page event to frontend")
+                except Exception as e:
+                    print(f"[WARN] Could not emit reload_shelf_page: {e}")
+                
                 for name, dev in DEVICES.items():
                     if name == "Loadcell_1":
                         weight_of_one = globals.weight_of_one[:globals.LOADCELL_NUM_1]
