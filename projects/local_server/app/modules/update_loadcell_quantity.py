@@ -67,7 +67,7 @@ DEVICES = {
 def send_mqtt_data():
     # Send mqtt data to broker
     while True:
-        time.sleep(5)
+        time.sleep(10)
         try:
             sensor_data = {
                 "id": os.getenv("SHELF_ID"),
