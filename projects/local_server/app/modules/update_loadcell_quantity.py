@@ -37,15 +37,21 @@ load_dotenv()
 # MQTT Client
 # Create MQTT client using WebSocket
 client = mqtt.Client(client_id=os.getenv("SHELF_ID"),transport="websockets")
+mqtt_connected = False  # Track connection state
 
 # MQTT Callbacks
 def on_connect(client, userdata, flags, rc):
+    global mqtt_connected
     if rc == 0:
+        mqtt_connected = True
         print("✅ MQTT Connected successfully!")
     else:
+        mqtt_connected = False
         print(f"❌ MQTT Connection failed with code {rc}")
 
 def on_disconnect(client, userdata, rc):
+    global mqtt_connected
+    mqtt_connected = False
     if rc != 0:
         print(f"⚠️ MQTT Unexpected disconnect: {rc}. Reconnecting...")
         try:
@@ -65,7 +71,17 @@ client.on_publish = on_publish
 try:
     client.connect(os.getenv("BROKER_URL"), int(os.getenv("BROKER_PORT")), 60)
     client.loop_start()  # Start background thread for network loop
-    print("🔄 MQTT background loop started")
+    print("🔄 MQTT background loop started, waiting for connection...")
+    
+    # Wait for connection to be established (max 10 seconds)
+    import time as time_module
+    for i in range(50):  # 50 * 0.2s = 10s timeout
+        if mqtt_connected:
+            print("✅ MQTT connection established!")
+            break
+        time_module.sleep(0.2)
+    else:
+        print("⚠️ MQTT connection timeout - will retry in background")
 except Exception as e:
     print(f"❌ Error connecting to MQTT broker: {e}")
 # ADDRESS UUIDs
@@ -176,8 +192,14 @@ def send_mqtt_data():
                     "id": os.getenv("SHELF_ID"),
                     **current_sensor_data
                 }
-                client.publish(os.getenv("MQTT_SENSOR_TOPIC"), json.dumps(sensor_data), retain=True)
-                print(f"Published sensor data - Reason: {reason}")
+                if mqtt_connected:
+                    msg_info = client.publish(os.getenv("MQTT_SENSOR_TOPIC"), json.dumps(sensor_data), qos=1, retain=True)
+                    if msg_info.rc == mqtt.MQTT_ERR_SUCCESS:
+                        print(f"🌡️  Sensor published - Reason: {reason}")
+                    else:
+                        print(f"⚠️ Sensor publish failed: rc={msg_info.rc}")
+                else:
+                    print("⚠️ MQTT not connected, skipping sensor publish")
             
             if globals.get_shelf_lean() or globals.get_shelf_shake():
                 shelf_status = {
@@ -186,8 +208,12 @@ def send_mqtt_data():
                     "shelf_status_shake": globals.get_shelf_shake(),
                     "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                client.publish(os.getenv("MQTT_SHELF_STATUS_TOPIC"), json.dumps(shelf_status), retain=True)
-                print("Sent shelf status update")
+                if mqtt_connected:
+                    msg_info = client.publish(os.getenv("MQTT_SHELF_STATUS_TOPIC"), json.dumps(shelf_status), qos=1, retain=True)
+                    if msg_info.rc == mqtt.MQTT_ERR_SUCCESS:
+                        print("⚠️ Shelf status published")
+                    else:
+                        print(f"⚠️ Shelf status publish failed: rc={msg_info.rc}")
                 globals.set_shelf_lean(False)
                 globals.set_shelf_shake(False)
             if globals.get_unpaid_customer_warning():
@@ -196,8 +222,12 @@ def send_mqtt_data():
                     "taken_quantity": globals.get_taken_quantity(),
                     "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                client.publish(os.getenv("MQTT_UNPAID_CUSTOMER_TOPIC"), json.dumps(unpaid_customer), retain=True)
-                print("Sent unpaid customer warning")
+                if mqtt_connected:
+                    msg_info = client.publish(os.getenv("MQTT_UNPAID_CUSTOMER_TOPIC"), json.dumps(unpaid_customer), qos=1, retain=True)
+                    if msg_info.rc == mqtt.MQTT_ERR_SUCCESS:
+                        print("🚨 Unpaid customer published")
+                    else:
+                        print(f"⚠️ Unpaid customer publish failed: rc={msg_info.rc}")
                 globals.set_unpaid_customer_warning(False)
         except Exception as e:
             print(f"⚠️ MQTT publish error in send_mqtt_data: {e}")
@@ -317,6 +347,10 @@ def notification_handler_factory(device_name):
 
         # Send mqtt data to broker
         try:
+            if not mqtt_connected:
+                # print("⚠️ MQTT not connected, skipping loadcell publish")
+                return  # Exit early if not connected
+            
             mqtt_data = {
                 "id": os.getenv("SHELF_ID"),
                 "values": new_data if isinstance(new_data, list) else [int(x) for x in new_data]
@@ -469,16 +503,22 @@ def send_data_to_devices(loop):
                 
                 # Send MQTT notification when product added successfully
                 try:
-                    product_added_data = {
-                        "id": os.getenv("SHELF_ID"),
-                        "event": "product_added",
-                        "rfid": globals.rfid,
-                        "verified_quantity": globals.get_verified_quantity(),
-                        "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    }
-                    client.publish(os.getenv("MQTT_PRODUCT_ADDED_TOPIC"), 
-                                   json.dumps(product_added_data), retain=True)
-                    print(f"📦 Sent product added notification - RFID: {globals.rfid}")
+                    if mqtt_connected:
+                        product_added_data = {
+                            "id": os.getenv("SHELF_ID"),
+                            "event": "product_added",
+                            "rfid": globals.rfid,
+                            "verified_quantity": globals.get_verified_quantity(),
+                            "date_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                        msg_info = client.publish(os.getenv("MQTT_PRODUCT_ADDED_TOPIC"), 
+                                       json.dumps(product_added_data), qos=1, retain=True)
+                        if msg_info.rc == mqtt.MQTT_ERR_SUCCESS:
+                            print(f"📦 Product added published - RFID: {globals.rfid}")
+                        else:
+                            print(f"⚠️ Product added publish failed: rc={msg_info.rc}")
+                    else:
+                        print("⚠️ MQTT not connected, skipping product added notification")
                 except Exception as e:
                     print(f"Failed to send product added MQTT: {e}")
             else: # Adding
