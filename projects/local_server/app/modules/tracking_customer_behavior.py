@@ -64,6 +64,10 @@ def start_tracking_customer_behavior():
 
     ret, frame = cap.read()
     if ret:
+        # Print frame size
+        print(f"📷 Camera frame size: {frame.shape[1]}x{frame.shape[0]} (WxH)")
+        print(f"   Frame shape: {frame.shape}")
+        
         # init the model (load weights)
         model(frame)
         # threading.Thread(target=play_sound, args=(sound_file_path_2,)).start()
@@ -85,6 +89,10 @@ def start_tracking_customer_behavior():
         if not ret:
             print("Error: Can't read frame!")
             continue
+        
+        # Debug: Print frame size on first valid frame in tracking mode
+        if alert == 0 and globals.get_is_tracking():
+            print(f"📸 Current frame size: {frame.shape[1]}x{frame.shape[0]}")
     
         results = model(frame, conf=0.3, verbose=False)
 
@@ -95,7 +103,7 @@ def start_tracking_customer_behavior():
             for box in boxes:
                 cls = int(box.cls[0].cpu().numpy())
                 conf = float(box.conf[0])
-                if conf > 0.5 and cls == 0:  
+                if conf > 0.4 and cls == 0:  
                     x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                     cx = (x1 + x2) / 2
                     cy = (y1 + y2) / 2
