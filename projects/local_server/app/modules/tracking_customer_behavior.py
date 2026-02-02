@@ -34,7 +34,7 @@ def start_tracking_customer_behavior():
     frame_crop_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/static/img/customer_frame"))
     
     roi_x1, roi_y1 = 50, 0
-    roi_x2, roi_y2 = 366, 640
+    roi_x2, roi_y2 = 590, 480  # Define ROI coordinates for 640x480 frame
     ################# PC config #################
     # model_file_path = os.path.abspath(os.path.join(__file__, "../../..", "app/modules/detector/models/yolo11n-person-416-ver2.pt"))
     # model = YOLO(model_file_path)
@@ -64,10 +64,6 @@ def start_tracking_customer_behavior():
 
     ret, frame = cap.read()
     if ret:
-        # Print frame size
-        print(f"📷 Camera frame size: {frame.shape[1]}x{frame.shape[0]} (WxH)")
-        print(f"   Frame shape: {frame.shape}")
-        
         # init the model (load weights)
         model(frame)
         # threading.Thread(target=play_sound, args=(sound_file_path_2,)).start()
@@ -89,10 +85,6 @@ def start_tracking_customer_behavior():
         if not ret:
             print("Error: Can't read frame!")
             continue
-        
-        # Debug: Print frame size on first valid frame in tracking mode
-        if alert == 0 and globals.get_is_tracking():
-            print(f"📸 Current frame size: {frame.shape[1]}x{frame.shape[0]}")
     
         results = model(frame, conf=0.3, verbose=False)
 
